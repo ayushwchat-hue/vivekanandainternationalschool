@@ -166,7 +166,7 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
                 <Menu className="w-5 h-5" />
               </SidebarTrigger>
               <h2 className="font-display font-semibold text-foreground">
-                Vivekananda International School - HRMS
+                VIS - HRMS
               </h2>
             </div>
             <div className="flex items-center gap-2">
