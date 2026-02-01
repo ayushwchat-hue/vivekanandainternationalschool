@@ -1,6 +1,5 @@
 import { Link } from 'react-router-dom';
 import { GraduationCap, Phone, Mail, MapPin, Facebook, Twitter, Instagram, Youtube, Settings } from 'lucide-react';
-import { Button } from '@/components/ui/button';
 import { useScrollAnimation } from '@/hooks/useScrollAnimation';
 import { useSiteContent, getExtraData } from '@/hooks/useSiteContent';
 
@@ -98,6 +97,20 @@ const Footer = () => {
                   </Link>
                 </li>
               ))}
+              <li 
+                className={`transition-all duration-500 ${
+                  isVisible ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-4'
+                }`}
+                style={{ transitionDelay: `${200 + extraData.quickLinks.length * 50}ms` }}
+              >
+                <Link 
+                  to="/admin" 
+                  className="inline-flex items-center gap-2 text-background/80 hover:text-secondary transition-colors text-sm"
+                >
+                  <Settings className="w-4 h-4" />
+                  HRMS Portal
+                </Link>
+              </li>
             </ul>
           </div>
 
@@ -170,12 +183,6 @@ const Footer = () => {
             <Link to="/terms" className="text-background/60 hover:text-background text-sm transition-colors">
               Terms of Service
             </Link>
-            <Button asChild size="sm" variant="secondary">
-              <Link to="/admin">
-                <Settings className="w-4 h-4 mr-2" />
-                HRMS Portal
-              </Link>
-            </Button>
           </div>
         </div>
       </div>
