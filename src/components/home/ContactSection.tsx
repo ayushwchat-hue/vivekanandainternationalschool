@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
+import { useScrollAnimation } from '@/hooks/useScrollAnimation';
 
 const ContactSection = () => {
   const { toast } = useToast();
@@ -14,6 +15,9 @@ const ContactSection = () => {
     phone: '',
     message: '',
   });
+
+  const { ref: leftRef, isVisible: leftVisible } = useScrollAnimation({ threshold: 0.15 });
+  const { ref: rightRef, isVisible: rightVisible } = useScrollAnimation({ threshold: 0.15 });
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -31,12 +35,45 @@ const ContactSection = () => {
     setIsLoading(false);
   };
 
+  const contactItems = [
+    {
+      icon: MapPin,
+      title: 'Address',
+      content: ['123 Education Street, Knowledge City,', 'State - 123456'],
+      bgColor: 'bg-primary',
+    },
+    {
+      icon: Phone,
+      title: 'Phone',
+      content: ['+91 12345 67890', '+91 98765 43210'],
+      bgColor: 'bg-secondary',
+    },
+    {
+      icon: Mail,
+      title: 'Email',
+      content: ['info@vivekanandaschool.edu', 'admissions@vivekanandaschool.edu'],
+      bgColor: 'bg-accent',
+    },
+    {
+      icon: Clock,
+      title: 'Office Hours',
+      content: ['Monday - Saturday: 8:00 AM - 4:00 PM', 'Sunday: Closed'],
+      bgColor: 'bg-muted',
+      iconColor: 'text-foreground',
+    },
+  ];
+
   return (
     <section id="contact" className="py-16 md:py-24 bg-muted/50">
       <div className="container mx-auto px-4">
         <div className="grid lg:grid-cols-2 gap-12 lg:gap-16">
           {/* Contact Info */}
-          <div className="space-y-8">
+          <div 
+            ref={leftRef}
+            className={`space-y-8 transition-all duration-700 ease-out ${
+              leftVisible ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-12'
+            }`}
+          >
             <div>
               <div className="inline-flex items-center gap-2 bg-primary/10 rounded-full px-4 py-2 mb-4">
                 <span className="text-sm font-medium text-primary">Get in Touch</span>
@@ -50,56 +87,38 @@ const ContactSection = () => {
             </div>
             
             <div className="space-y-6">
-              <div className="flex items-start gap-4">
-                <div className="w-12 h-12 rounded-xl bg-primary flex items-center justify-center flex-shrink-0">
-                  <MapPin className="w-6 h-6 text-primary-foreground" />
-                </div>
-                <div>
-                  <h4 className="font-semibold text-foreground mb-1">Address</h4>
-                  <p className="text-muted-foreground">
-                    123 Education Street, Knowledge City,<br />
-                    State - 123456
-                  </p>
-                </div>
-              </div>
-              
-              <div className="flex items-start gap-4">
-                <div className="w-12 h-12 rounded-xl bg-secondary flex items-center justify-center flex-shrink-0">
-                  <Phone className="w-6 h-6 text-secondary-foreground" />
-                </div>
-                <div>
-                  <h4 className="font-semibold text-foreground mb-1">Phone</h4>
-                  <p className="text-muted-foreground">+91 12345 67890</p>
-                  <p className="text-muted-foreground">+91 98765 43210</p>
-                </div>
-              </div>
-              
-              <div className="flex items-start gap-4">
-                <div className="w-12 h-12 rounded-xl bg-accent flex items-center justify-center flex-shrink-0">
-                  <Mail className="w-6 h-6 text-accent-foreground" />
-                </div>
-                <div>
-                  <h4 className="font-semibold text-foreground mb-1">Email</h4>
-                  <p className="text-muted-foreground">info@vivekanandaschool.edu</p>
-                  <p className="text-muted-foreground">admissions@vivekanandaschool.edu</p>
-                </div>
-              </div>
-              
-              <div className="flex items-start gap-4">
-                <div className="w-12 h-12 rounded-xl bg-muted flex items-center justify-center flex-shrink-0">
-                  <Clock className="w-6 h-6 text-foreground" />
-                </div>
-                <div>
-                  <h4 className="font-semibold text-foreground mb-1">Office Hours</h4>
-                  <p className="text-muted-foreground">Monday - Saturday: 8:00 AM - 4:00 PM</p>
-                  <p className="text-muted-foreground">Sunday: Closed</p>
-                </div>
-              </div>
+              {contactItems.map((item, index) => {
+                const Icon = item.icon;
+                return (
+                  <div 
+                    key={item.title}
+                    className={`flex items-start gap-4 transition-all duration-500 ${
+                      leftVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
+                    }`}
+                    style={{ transitionDelay: `${300 + index * 100}ms` }}
+                  >
+                    <div className={`w-12 h-12 rounded-xl ${item.bgColor} flex items-center justify-center flex-shrink-0`}>
+                      <Icon className={`w-6 h-6 ${item.iconColor || 'text-primary-foreground'}`} />
+                    </div>
+                    <div>
+                      <h4 className="font-semibold text-foreground mb-1">{item.title}</h4>
+                      {item.content.map((line, i) => (
+                        <p key={i} className="text-muted-foreground">{line}</p>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           </div>
           
           {/* Contact Form */}
-          <div className="bg-card rounded-2xl p-6 md:p-8 card-shadow border border-border">
+          <div 
+            ref={rightRef}
+            className={`bg-card rounded-2xl p-6 md:p-8 card-shadow border border-border transition-all duration-700 ease-out delay-200 ${
+              rightVisible ? 'opacity-100 translate-x-0' : 'opacity-0 translate-x-12'
+            }`}
+          >
             <h3 className="font-display text-2xl font-bold text-foreground mb-6">
               Send us a Message
             </h3>
