@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
-import { GraduationCap, Phone, Mail, MapPin, Facebook, Twitter, Instagram, Youtube } from 'lucide-react';
+import { GraduationCap, Phone, Mail, MapPin, Facebook, Twitter, Instagram, Youtube, Settings } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import { useScrollAnimation } from '@/hooks/useScrollAnimation';
 import { useSiteContent, getExtraData } from '@/hooks/useSiteContent';
 
@@ -169,6 +170,12 @@ const Footer = () => {
             <Link to="/terms" className="text-background/60 hover:text-background text-sm transition-colors">
               Terms of Service
             </Link>
+            <Button asChild size="sm" variant="secondary">
+              <Link to="/admin">
+                <Settings className="w-4 h-4 mr-2" />
+                HRMS Portal
+              </Link>
+            </Button>
           </div>
         </div>
       </div>
