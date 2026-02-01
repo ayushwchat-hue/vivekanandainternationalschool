@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import {
   LayoutDashboard,
   FileText,
@@ -8,7 +8,11 @@ import {
   Menu,
   ChevronDown,
   GraduationCap,
+  LogOut,
 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { useAdminAuth } from '@/contexts/AdminAuthContext';
+import ChangePasswordDialog from './ChangePasswordDialog';
 import {
   Sidebar,
   SidebarContent,
@@ -143,6 +147,14 @@ const AdminSidebar = () => {
 };
 
 const AdminLayout = ({ children }: AdminLayoutProps) => {
+  const { logout } = useAdminAuth();
+  const navigate = useNavigate();
+
+  const handleLogout = () => {
+    logout();
+    navigate('/admin/login');
+  };
+
   return (
     <SidebarProvider>
       <div className="min-h-screen flex w-full bg-muted/30">
@@ -156,6 +168,13 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
               <h2 className="font-display font-semibold text-foreground">
                 Vivekananda International School - HRMS
               </h2>
+            </div>
+            <div className="flex items-center gap-2">
+              <ChangePasswordDialog />
+              <Button variant="outline" size="sm" onClick={handleLogout}>
+                <LogOut className="w-4 h-4 mr-2" />
+                Logout
+              </Button>
             </div>
           </header>
           <main className="flex-1 p-4 md:p-6 overflow-auto">
