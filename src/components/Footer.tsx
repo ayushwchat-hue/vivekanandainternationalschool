@@ -15,7 +15,7 @@ const Footer = () => {
                 <GraduationCap className="w-6 h-6 text-primary-foreground" />
               </div>
               <div>
-                <h3 className="font-display text-lg font-bold">Vivekananda International</h3>
+                <h3 className="font-display text-lg font-bold">Vivekananda International School</h3>
                 <p className="text-sm text-background/70">CBSE Affiliated School</p>
               </div>
             </div>
