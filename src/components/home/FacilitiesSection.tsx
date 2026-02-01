@@ -3,38 +3,47 @@ import scienceLabImage from '@/assets/science-lab.jpg';
 import libraryImage from '@/assets/library.jpg';
 import sportsImage from '@/assets/sports.jpg';
 import { useScrollAnimation } from '@/hooks/useScrollAnimation';
+import { useSiteContent, getExtraData } from '@/hooks/useSiteContent';
 
-const facilities = [
-  {
-    icon: FlaskConical,
-    title: 'Science Labs',
-    description: 'State-of-the-art physics, chemistry, and biology laboratories for hands-on learning.',
-    image: scienceLabImage,
-  },
-  {
-    icon: BookMarked,
-    title: 'Library',
-    description: 'A vast collection of books, journals, and digital resources for curious minds.',
-    image: libraryImage,
-  },
-  {
-    icon: Trophy,
-    title: 'Sports Complex',
-    description: 'Multi-sport facilities including basketball, cricket, football, and athletics.',
-    image: sportsImage,
-  },
+interface Facility {
+  title: string;
+  description: string;
+}
+
+interface FacilitiesExtraData {
+  mainFacilities: Facility[];
+  additionalFacilities: Facility[];
+}
+
+const defaultMainFacilities: Facility[] = [
+  { title: 'Science Labs', description: 'State-of-the-art physics, chemistry, and biology laboratories for hands-on learning.' },
+  { title: 'Library', description: 'A vast collection of books, journals, and digital resources for curious minds.' },
+  { title: 'Sports Complex', description: 'Multi-sport facilities including basketball, cricket, football, and athletics.' },
 ];
 
-const additionalFacilities = [
-  { icon: Computer, title: 'Computer Labs', description: 'Modern IT infrastructure with latest software' },
-  { icon: Bus, title: 'Transportation', description: 'Safe and comfortable school buses covering all areas' },
-  { icon: Utensils, title: 'Cafeteria', description: 'Hygienic food options with nutritious meals' },
+const defaultAdditionalFacilities: Facility[] = [
+  { title: 'Computer Labs', description: 'Modern IT infrastructure with latest software' },
+  { title: 'Transportation', description: 'Safe and comfortable school buses covering all areas' },
+  { title: 'Cafeteria', description: 'Hygienic food options with nutritious meals' },
 ];
+
+const facilityImages = [scienceLabImage, libraryImage, sportsImage];
+const mainIcons = [FlaskConical, BookMarked, Trophy];
+const additionalIcons = [Computer, Bus, Utensils];
 
 const FacilitiesSection = () => {
   const { ref: headerRef, isVisible: headerVisible } = useScrollAnimation({ threshold: 0.2 });
   const { ref: mainRef, isVisible: mainVisible } = useScrollAnimation({ threshold: 0.1 });
   const { ref: additionalRef, isVisible: additionalVisible } = useScrollAnimation({ threshold: 0.2 });
+
+  const { content } = useSiteContent('facilities');
+  const extraData = getExtraData<FacilitiesExtraData>(content, { 
+    mainFacilities: defaultMainFacilities, 
+    additionalFacilities: defaultAdditionalFacilities 
+  });
+
+  const mainFacilities = extraData.mainFacilities || defaultMainFacilities;
+  const additionalFacilities = extraData.additionalFacilities || defaultAdditionalFacilities;
 
   return (
     <section id="facilities" className="py-16 md:py-24 section-gradient">
@@ -47,21 +56,20 @@ const FacilitiesSection = () => {
           }`}
         >
           <div className="inline-flex items-center gap-2 bg-accent/10 rounded-full px-4 py-2 mb-4">
-            <span className="text-sm font-medium text-accent">Our Facilities</span>
+            <span className="text-sm font-medium text-accent">{content?.subtitle || 'Our Facilities'}</span>
           </div>
           <h2 className="font-display text-3xl md:text-4xl lg:text-5xl font-bold text-foreground mb-4">
-            World-Class Infrastructure
+            {content?.title || 'World-Class Infrastructure'}
           </h2>
           <p className="text-muted-foreground text-lg">
-            We provide modern facilities that enhance the learning experience and support 
-            the overall development of our students.
+            {content?.description || 'We provide modern facilities that enhance the learning experience and support the overall development of our students.'}
           </p>
         </div>
         
         {/* Main Facilities */}
         <div ref={mainRef} className="grid md:grid-cols-3 gap-6 mb-12">
-          {facilities.map((facility, index) => {
-            const Icon = facility.icon;
+          {mainFacilities.map((facility, index) => {
+            const Icon = mainIcons[index] || FlaskConical;
             return (
               <div 
                 key={facility.title}
@@ -71,7 +79,7 @@ const FacilitiesSection = () => {
                 style={{ transitionDelay: `${index * 150}ms` }}
               >
                 <img 
-                  src={facility.image} 
+                  src={facilityImages[index] || facilityImages[0]} 
                   alt={facility.title}
                   className="w-full h-64 object-cover group-hover:scale-105 transition-transform duration-500"
                 />
@@ -97,7 +105,7 @@ const FacilitiesSection = () => {
         {/* Additional Facilities */}
         <div ref={additionalRef} className="grid sm:grid-cols-3 gap-6">
           {additionalFacilities.map((facility, index) => {
-            const Icon = facility.icon;
+            const Icon = additionalIcons[index] || Computer;
             return (
               <div 
                 key={facility.title}

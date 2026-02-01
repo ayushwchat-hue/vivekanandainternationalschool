@@ -3,15 +3,39 @@ import { ArrowRight, Award, Users, BookOpen } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import heroImage from '@/assets/hero-school.jpg';
 import { useEffect, useState } from 'react';
+import { useSiteContent, getExtraData } from '@/hooks/useSiteContent';
+
+interface HeroExtraData {
+  stats: { value: string; label: string }[];
+  ctaButtons: { text: string; link: string }[];
+}
+
+const defaultExtraData: HeroExtraData = {
+  stats: [
+    { value: '1500+', label: 'Students' },
+    { value: '50+', label: 'Expert Teachers' },
+    { value: '20+', label: 'Years Excellence' },
+  ],
+  ctaButtons: [
+    { text: 'Apply for Admission', link: '/admission' },
+    { text: 'Learn More', link: '/#about' },
+  ],
+};
+
+const statIcons = [Users, BookOpen, Award];
 
 const HeroSection = () => {
   const [isLoaded, setIsLoaded] = useState(false);
+  const { content, loading } = useSiteContent('hero');
+  const extraData = getExtraData<HeroExtraData>(content, defaultExtraData);
 
   useEffect(() => {
-    // Trigger animations after component mounts
     const timer = setTimeout(() => setIsLoaded(true), 100);
     return () => clearTimeout(timer);
   }, []);
+
+  // Parse title to highlight "Vivekananda"
+  const titleParts = (content?.title || 'Welcome to Vivekananda International School').split('Vivekananda');
 
   return (
     <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
@@ -20,7 +44,7 @@ const HeroSection = () => {
         className={`absolute inset-0 bg-cover bg-center bg-no-repeat transition-all duration-1000 ease-out ${
           isLoaded ? 'scale-100 opacity-100' : 'scale-110 opacity-0'
         }`}
-        style={{ backgroundImage: `url(${heroImage})` }}
+        style={{ backgroundImage: `url(${content?.image_url || heroImage})` }}
       />
       
       {/* Overlay */}
@@ -36,7 +60,7 @@ const HeroSection = () => {
           style={{ transitionDelay: '200ms' }}
           >
             <Award className="w-4 h-4 text-secondary" />
-            <span className="text-sm font-medium text-secondary">CBSE Affiliated School</span>
+            <span className="text-sm font-medium text-secondary">{content?.subtitle || 'CBSE Affiliated School'}</span>
           </div>
           
           {/* Main Heading */}
@@ -45,9 +69,13 @@ const HeroSection = () => {
           }`}
           style={{ transitionDelay: '400ms' }}
           >
-            Welcome to{' '}
-            <span className="text-secondary">Vivekananda</span>{' '}
-            International School
+            {titleParts[0]}
+            {titleParts.length > 1 && (
+              <>
+                <span className="text-secondary">Vivekananda</span>
+                {titleParts[1]}
+              </>
+            )}
           </h1>
           
           {/* Subtitle */}
@@ -56,8 +84,7 @@ const HeroSection = () => {
           }`}
           style={{ transitionDelay: '600ms' }}
           >
-            Nurturing Minds, Building Futures. A premier institution committed to 
-            excellence in education from Nursery to Class 10.
+            {content?.description || 'Nurturing Minds, Building Futures. A premier institution committed to excellence in education from Nursery to Class 10.'}
           </p>
           
           {/* CTA Buttons */}
@@ -66,34 +93,36 @@ const HeroSection = () => {
           }`}
           style={{ transitionDelay: '800ms' }}
           >
-            <Button asChild size="lg" className="bg-secondary hover:bg-secondary/90 text-secondary-foreground px-8 h-12 text-base gap-2">
-              <Link to="/admission">
-                Apply for Admission
-                <ArrowRight className="w-4 h-4" />
-              </Link>
-            </Button>
-            <Button asChild size="lg" variant="outline" className="border-background/30 text-background hover:bg-background/10 px-8 h-12 text-base">
-              <Link to="/#about">
-                Learn More
-              </Link>
-            </Button>
+            {extraData.ctaButtons.map((btn, index) => (
+              <Button 
+                key={index}
+                asChild 
+                size="lg" 
+                variant={index === 0 ? 'default' : 'outline'}
+                className={index === 0 
+                  ? "bg-secondary hover:bg-secondary/90 text-secondary-foreground px-8 h-12 text-base gap-2"
+                  : "border-background/30 text-background hover:bg-background/10 px-8 h-12 text-base"
+                }
+              >
+                <Link to={btn.link}>
+                  {btn.text}
+                  {index === 0 && <ArrowRight className="w-4 h-4" />}
+                </Link>
+              </Button>
+            ))}
           </div>
           
           {/* Stats */}
           <div className="grid grid-cols-3 gap-4 md:gap-8 mt-12 md:mt-16">
-            {[
-              { icon: Users, value: '1500+', label: 'Students', delay: '1000ms' },
-              { icon: BookOpen, value: '50+', label: 'Expert Teachers', delay: '1100ms' },
-              { icon: Award, value: '20+', label: 'Years Excellence', delay: '1200ms' },
-            ].map((stat) => {
-              const Icon = stat.icon;
+            {extraData.stats.map((stat, index) => {
+              const Icon = statIcons[index] || Award;
               return (
                 <div 
                   key={stat.label}
                   className={`text-center p-4 rounded-xl bg-background/5 backdrop-blur-sm border border-background/10 transition-all duration-700 ease-out ${
                     isLoaded ? 'opacity-100 translate-y-0 scale-100' : 'opacity-0 translate-y-8 scale-95'
                   }`}
-                  style={{ transitionDelay: stat.delay }}
+                  style={{ transitionDelay: `${1000 + index * 100}ms` }}
                 >
                   <Icon className="w-6 h-6 md:w-8 md:h-8 text-secondary mx-auto mb-2" />
                   <div className="font-display text-2xl md:text-4xl font-bold text-background">{stat.value}</div>

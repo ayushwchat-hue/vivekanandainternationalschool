@@ -5,6 +5,37 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { useScrollAnimation } from '@/hooks/useScrollAnimation';
+import { useSiteContent, getExtraData } from '@/hooks/useSiteContent';
+
+interface ContactItem {
+  title: string;
+  content: string[];
+}
+
+interface ContactExtraData {
+  contactItems: ContactItem[];
+}
+
+const defaultContactItems: ContactItem[] = [
+  { title: 'Address', content: ['123 Education Street, Knowledge City,', 'State - 123456'] },
+  { title: 'Phone', content: ['+91 12345 67890', '+91 98765 43210'] },
+  { title: 'Email', content: ['info@vivekanandaschool.edu', 'admissions@vivekanandaschool.edu'] },
+  { title: 'Office Hours', content: ['Monday - Saturday: 8:00 AM - 4:00 PM', 'Sunday: Closed'] },
+];
+
+const iconMap: Record<string, typeof MapPin> = {
+  Address: MapPin,
+  Phone: Phone,
+  Email: Mail,
+  'Office Hours': Clock,
+};
+
+const bgColorMap: Record<string, string> = {
+  Address: 'bg-primary',
+  Phone: 'bg-secondary',
+  Email: 'bg-accent',
+  'Office Hours': 'bg-muted',
+};
 
 const ContactSection = () => {
   const { toast } = useToast();
@@ -19,6 +50,10 @@ const ContactSection = () => {
   const { ref: leftRef, isVisible: leftVisible } = useScrollAnimation({ threshold: 0.15 });
   const { ref: rightRef, isVisible: rightVisible } = useScrollAnimation({ threshold: 0.15 });
 
+  const { content } = useSiteContent('contact');
+  const extraData = getExtraData<ContactExtraData>(content, { contactItems: defaultContactItems });
+  const contactItems = extraData.contactItems || defaultContactItems;
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
@@ -28,40 +63,12 @@ const ContactSection = () => {
 
     toast({
       title: 'Message Sent!',
-      description: 'We\'ll get back to you within 24 hours.',
+      description: "We'll get back to you within 24 hours.",
     });
 
     setFormData({ name: '', email: '', phone: '', message: '' });
     setIsLoading(false);
   };
-
-  const contactItems = [
-    {
-      icon: MapPin,
-      title: 'Address',
-      content: ['123 Education Street, Knowledge City,', 'State - 123456'],
-      bgColor: 'bg-primary',
-    },
-    {
-      icon: Phone,
-      title: 'Phone',
-      content: ['+91 12345 67890', '+91 98765 43210'],
-      bgColor: 'bg-secondary',
-    },
-    {
-      icon: Mail,
-      title: 'Email',
-      content: ['info@vivekanandaschool.edu', 'admissions@vivekanandaschool.edu'],
-      bgColor: 'bg-accent',
-    },
-    {
-      icon: Clock,
-      title: 'Office Hours',
-      content: ['Monday - Saturday: 8:00 AM - 4:00 PM', 'Sunday: Closed'],
-      bgColor: 'bg-muted',
-      iconColor: 'text-foreground',
-    },
-  ];
 
   return (
     <section id="contact" className="py-16 md:py-24 bg-muted/50">
@@ -76,19 +83,22 @@ const ContactSection = () => {
           >
             <div>
               <div className="inline-flex items-center gap-2 bg-primary/10 rounded-full px-4 py-2 mb-4">
-                <span className="text-sm font-medium text-primary">Get in Touch</span>
+                <span className="text-sm font-medium text-primary">{content?.subtitle || 'Get in Touch'}</span>
               </div>
               <h2 className="font-display text-3xl md:text-4xl lg:text-5xl font-bold text-foreground mb-4">
-                Contact Us
+                {content?.title || 'Contact Us'}
               </h2>
               <p className="text-muted-foreground text-lg">
-                We're here to answer your questions and help you with the admission process.
+                {content?.description || "We're here to answer your questions and help you with the admission process."}
               </p>
             </div>
             
             <div className="space-y-6">
               {contactItems.map((item, index) => {
-                const Icon = item.icon;
+                const Icon = iconMap[item.title] || MapPin;
+                const bgColor = bgColorMap[item.title] || 'bg-muted';
+                const iconColor = item.title === 'Office Hours' ? 'text-foreground' : 'text-primary-foreground';
+                
                 return (
                   <div 
                     key={item.title}
@@ -97,8 +107,8 @@ const ContactSection = () => {
                     }`}
                     style={{ transitionDelay: `${300 + index * 100}ms` }}
                   >
-                    <div className={`w-12 h-12 rounded-xl ${item.bgColor} flex items-center justify-center flex-shrink-0`}>
-                      <Icon className={`w-6 h-6 ${item.iconColor || 'text-primary-foreground'}`} />
+                    <div className={`w-12 h-12 rounded-xl ${bgColor} flex items-center justify-center flex-shrink-0`}>
+                      <Icon className={`w-6 h-6 ${iconColor}`} />
                     </div>
                     <div>
                       <h4 className="font-semibold text-foreground mb-1">{item.title}</h4>

@@ -1,16 +1,38 @@
 import { Link } from 'react-router-dom';
 import { GraduationCap, Phone, Mail, MapPin, Facebook, Twitter, Instagram, Youtube } from 'lucide-react';
 import { useScrollAnimation } from '@/hooks/useScrollAnimation';
+import { useSiteContent, getExtraData } from '@/hooks/useSiteContent';
+
+interface FooterExtraData {
+  quickLinks: string[];
+  programs: string[];
+  socialLinks: {
+    facebook?: string;
+    twitter?: string;
+    instagram?: string;
+    youtube?: string;
+  };
+}
+
+const defaultExtraData: FooterExtraData = {
+  quickLinks: ['About Us', 'Programs', 'Facilities', 'Admission', 'Gallery', 'Contact'],
+  programs: ['Nursery & KG', 'Primary (1-5)', 'Middle School (6-8)', 'Secondary (9-10)'],
+  socialLinks: { facebook: '#', twitter: '#', instagram: '#', youtube: '#' },
+};
 
 const Footer = () => {
   const currentYear = new Date().getFullYear();
   const { ref: footerRef, isVisible } = useScrollAnimation({ threshold: 0.1 });
 
-  const footerColumns = [
-    {
-      title: 'Quick Links',
-      links: ['About Us', 'Programs', 'Facilities', 'Admission', 'Gallery', 'Contact'],
-    },
+  const { content } = useSiteContent('footer');
+  const { content: contactContent } = useSiteContent('contact');
+  const extraData = getExtraData<FooterExtraData>(content, defaultExtraData);
+
+  const socialIcons = [
+    { icon: Facebook, link: extraData.socialLinks?.facebook || '#' },
+    { icon: Twitter, link: extraData.socialLinks?.twitter || '#' },
+    { icon: Instagram, link: extraData.socialLinks?.instagram || '#' },
+    { icon: Youtube, link: extraData.socialLinks?.youtube || '#' },
   ];
 
   return (
@@ -28,19 +50,18 @@ const Footer = () => {
                 <GraduationCap className="w-6 h-6 text-primary-foreground" />
               </div>
               <div>
-                <h3 className="font-display text-lg font-bold">Vivekananda International School</h3>
-                <p className="text-sm text-background/70">CBSE Affiliated School</p>
+                <h3 className="font-display text-lg font-bold">{content?.title || 'Vivekananda International School'}</h3>
+                <p className="text-sm text-background/70">{content?.subtitle || 'CBSE Affiliated School'}</p>
               </div>
             </div>
             <p className="text-background/80 text-sm leading-relaxed">
-              Nurturing young minds since establishment. We are committed to providing quality education 
-              that shapes tomorrow's leaders.
+              {content?.description || "Nurturing young minds since establishment. We are committed to providing quality education that shapes tomorrow's leaders."}
             </p>
             <div className="flex gap-4">
-              {[Facebook, Twitter, Instagram, Youtube].map((Icon, index) => (
+              {socialIcons.map(({ icon: Icon, link }, index) => (
                 <a 
                   key={index}
-                  href="#" 
+                  href={link} 
                   className={`w-9 h-9 rounded-full bg-background/10 flex items-center justify-center hover:bg-primary transition-all duration-500 ${
                     isVisible ? 'opacity-100 scale-100' : 'opacity-0 scale-75'
                   }`}
@@ -60,7 +81,7 @@ const Footer = () => {
           >
             <h4 className="font-display text-lg font-semibold mb-4">Quick Links</h4>
             <ul className="space-y-3">
-              {['About Us', 'Programs', 'Facilities', 'Admission', 'Gallery', 'Contact'].map((link, index) => (
+              {extraData.quickLinks.map((link, index) => (
                 <li 
                   key={link}
                   className={`transition-all duration-500 ${
@@ -87,7 +108,7 @@ const Footer = () => {
           >
             <h4 className="font-display text-lg font-semibold mb-4">Our Programs</h4>
             <ul className="space-y-3">
-              {['Nursery & KG', 'Primary (1-5)', 'Middle School (6-8)', 'Secondary (9-10)'].map((program, index) => (
+              {extraData.programs.map((program, index) => (
                 <li 
                   key={program}
                   className={`transition-all duration-500 ${
@@ -139,7 +160,7 @@ const Footer = () => {
         style={{ transitionDelay: '500ms' }}
         >
           <p className="text-background/60 text-sm text-center md:text-left">
-            © {currentYear} Vivekananda International School. All rights reserved.
+            © {currentYear} {content?.title || 'Vivekananda International School'}. All rights reserved.
           </p>
           <div className="flex items-center gap-6">
             <Link to="/privacy" className="text-background/60 hover:text-background text-sm transition-colors">
