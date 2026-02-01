@@ -1,5 +1,5 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
-import * as bcrypt from "https://deno.land/x/bcrypt@v0.4.1/mod.ts";
+import bcrypt from "https://esm.sh/bcryptjs@2.4.3";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -44,7 +44,7 @@ Deno.serve(async (req) => {
       }
 
       // Verify password
-      const isValid = await bcrypt.compare(password, admin.password_hash);
+      const isValid = bcrypt.compareSync(password, admin.password_hash);
       
       if (!isValid) {
         return new Response(
@@ -104,7 +104,7 @@ Deno.serve(async (req) => {
       }
 
       // Verify current password
-      const isValid = await bcrypt.compare(password, admin.password_hash);
+      const isValid = bcrypt.compareSync(password, admin.password_hash);
       
       if (!isValid) {
         return new Response(
@@ -114,8 +114,7 @@ Deno.serve(async (req) => {
       }
 
       // Hash new password
-      const salt = await bcrypt.genSalt(10);
-      const newPasswordHash = await bcrypt.hash(newPassword, salt);
+      const newPasswordHash = bcrypt.hashSync(newPassword, 10);
 
       // Update password
       const { error: updateError } = await supabase
@@ -137,7 +136,7 @@ Deno.serve(async (req) => {
     }
 
     if (action === 'init-password') {
-      // Initialize password for first-time setup (only works if password is placeholder)
+      // Initialize password for first-time setup (only works if password is empty or placeholder)
       const { data: admin, error } = await supabase
         .from('admin_credentials')
         .select('*')
@@ -150,10 +149,10 @@ Deno.serve(async (req) => {
         );
       }
 
-      // Check if password is still placeholder
-      const isPlaceholder = admin.password_hash.startsWith('$2a$10$rQEY7GxLqpLFqKpVL1QqKuZ');
+      // Check if password is empty or placeholder
+      const needsInit = !admin.password_hash || admin.password_hash === '' || admin.password_hash.startsWith('$2a$10$rQEY7GxLqpLFqKpVL1QqKuZ');
       
-      if (!isPlaceholder) {
+      if (!needsInit) {
         return new Response(
           JSON.stringify({ error: 'Password already initialized' }),
           { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -168,8 +167,7 @@ Deno.serve(async (req) => {
       }
 
       // Hash new password
-      const salt = await bcrypt.genSalt(10);
-      const newPasswordHash = await bcrypt.hash(password, salt);
+      const newPasswordHash = bcrypt.hashSync(password, 10);
 
       // Update password
       const { error: updateError } = await supabase
@@ -204,7 +202,7 @@ Deno.serve(async (req) => {
         );
       }
 
-      const needsInit = admin.password_hash.startsWith('$2a$10$rQEY7GxLqpLFqKpVL1QqKuZ');
+      const needsInit = !admin.password_hash || admin.password_hash === '' || admin.password_hash.startsWith('$2a$10$rQEY7GxLqpLFqKpVL1QqKuZ');
       
       return new Response(
         JSON.stringify({ needsInit }),
