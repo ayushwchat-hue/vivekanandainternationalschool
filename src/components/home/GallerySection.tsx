@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Image as ImageIcon } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
+import { useScrollAnimation } from '@/hooks/useScrollAnimation';
 
 interface GalleryItem {
   id: string;
@@ -12,6 +13,8 @@ interface GalleryItem {
 const GallerySection = () => {
   const [images, setImages] = useState<GalleryItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const { ref: headerRef, isVisible: headerVisible } = useScrollAnimation({ threshold: 0.2 });
+  const { ref: gridRef, isVisible: gridVisible } = useScrollAnimation({ threshold: 0.1 });
 
   useEffect(() => {
     const fetchGallery = async () => {
@@ -47,7 +50,12 @@ const GallerySection = () => {
     <section id="gallery" className="py-16 md:py-24 bg-muted/50">
       <div className="container mx-auto px-4">
         {/* Header */}
-        <div className="text-center max-w-3xl mx-auto mb-12 md:mb-16">
+        <div 
+          ref={headerRef}
+          className={`text-center max-w-3xl mx-auto mb-12 md:mb-16 transition-all duration-700 ease-out ${
+            headerVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
+          }`}
+        >
           <div className="inline-flex items-center gap-2 bg-secondary/10 rounded-full px-4 py-2 mb-4">
             <span className="text-sm font-medium text-secondary">Photo Gallery</span>
           </div>
@@ -60,13 +68,14 @@ const GallerySection = () => {
         </div>
 
         {/* Gallery Grid */}
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+        <div ref={gridRef} className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
           {images.map((item, index) => (
             <div
               key={item.id}
-              className={`group relative overflow-hidden rounded-xl card-shadow hover:card-shadow-hover transition-all duration-300 ${
+              className={`group relative overflow-hidden rounded-xl card-shadow hover:card-shadow-hover transition-all duration-500 ${
                 index === 0 ? 'col-span-2 row-span-2' : ''
-              }`}
+              } ${gridVisible ? 'opacity-100 scale-100' : 'opacity-0 scale-95'}`}
+              style={{ transitionDelay: `${index * 75}ms` }}
             >
               <div className={`${index === 0 ? 'aspect-square' : 'aspect-video'} bg-muted`}>
                 {item.image_url ? (

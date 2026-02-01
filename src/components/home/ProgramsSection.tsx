@@ -1,6 +1,7 @@
 import { Baby, Backpack, GraduationCap, BookOpen, ArrowRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
+import { useScrollAnimation } from '@/hooks/useScrollAnimation';
 
 const programs = [
   {
@@ -42,11 +43,20 @@ const programs = [
 ];
 
 const ProgramsSection = () => {
+  const { ref: headerRef, isVisible: headerVisible } = useScrollAnimation({ threshold: 0.2 });
+  const { ref: cardsRef, isVisible: cardsVisible } = useScrollAnimation({ threshold: 0.1 });
+  const { ref: ctaRef, isVisible: ctaVisible } = useScrollAnimation({ threshold: 0.5 });
+
   return (
     <section id="programs" className="py-16 md:py-24 bg-muted/50">
       <div className="container mx-auto px-4">
         {/* Header */}
-        <div className="text-center max-w-3xl mx-auto mb-12 md:mb-16">
+        <div 
+          ref={headerRef}
+          className={`text-center max-w-3xl mx-auto mb-12 md:mb-16 transition-all duration-700 ease-out ${
+            headerVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
+          }`}
+        >
           <div className="inline-flex items-center gap-2 bg-primary/10 rounded-full px-4 py-2 mb-4">
             <span className="text-sm font-medium text-primary">Academic Programs</span>
           </div>
@@ -60,7 +70,7 @@ const ProgramsSection = () => {
         </div>
         
         {/* Programs Grid */}
-        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div ref={cardsRef} className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
           {programs.map((program, index) => {
             const Icon = program.icon;
             const colorClasses = {
@@ -72,8 +82,10 @@ const ProgramsSection = () => {
             return (
               <div 
                 key={program.title}
-                className="group bg-card rounded-2xl p-6 card-shadow hover:card-shadow-hover transition-all duration-300 border border-border hover:-translate-y-1"
-                style={{ animationDelay: `${index * 100}ms` }}
+                className={`group bg-card rounded-2xl p-6 card-shadow hover:card-shadow-hover transition-all duration-500 border border-border hover:-translate-y-1 ${
+                  cardsVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
+                }`}
+                style={{ transitionDelay: `${index * 100}ms` }}
               >
                 <div className={`w-14 h-14 rounded-xl ${colorClasses[program.color as keyof typeof colorClasses]} flex items-center justify-center mb-4`}>
                   <Icon className="w-7 h-7" />
@@ -110,7 +122,12 @@ const ProgramsSection = () => {
         </div>
         
         {/* CTA */}
-        <div className="text-center mt-12">
+        <div 
+          ref={ctaRef}
+          className={`text-center mt-12 transition-all duration-700 ease-out ${
+            ctaVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'
+          }`}
+        >
           <Button asChild size="lg" className="gap-2">
             <Link to="/admission">
               Enroll Your Child Today

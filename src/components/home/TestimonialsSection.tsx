@@ -1,4 +1,5 @@
 import { Star, Quote } from 'lucide-react';
+import { useScrollAnimation } from '@/hooks/useScrollAnimation';
 
 const testimonials = [
   {
@@ -22,11 +23,19 @@ const testimonials = [
 ];
 
 const TestimonialsSection = () => {
+  const { ref: headerRef, isVisible: headerVisible } = useScrollAnimation({ threshold: 0.2 });
+  const { ref: cardsRef, isVisible: cardsVisible } = useScrollAnimation({ threshold: 0.1 });
+
   return (
     <section className="py-16 md:py-24 bg-primary">
       <div className="container mx-auto px-4">
         {/* Header */}
-        <div className="text-center max-w-3xl mx-auto mb-12 md:mb-16">
+        <div 
+          ref={headerRef}
+          className={`text-center max-w-3xl mx-auto mb-12 md:mb-16 transition-all duration-700 ease-out ${
+            headerVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
+          }`}
+        >
           <div className="inline-flex items-center gap-2 bg-primary-foreground/20 rounded-full px-4 py-2 mb-4">
             <span className="text-sm font-medium text-primary-foreground">Testimonials</span>
           </div>
@@ -39,11 +48,14 @@ const TestimonialsSection = () => {
         </div>
         
         {/* Testimonials Grid */}
-        <div className="grid md:grid-cols-3 gap-6">
+        <div ref={cardsRef} className="grid md:grid-cols-3 gap-6">
           {testimonials.map((testimonial, index) => (
             <div 
               key={index}
-              className="bg-primary-foreground rounded-2xl p-6 relative"
+              className={`bg-primary-foreground rounded-2xl p-6 relative transition-all duration-500 ${
+                cardsVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
+              }`}
+              style={{ transitionDelay: `${index * 150}ms` }}
             >
               <Quote className="absolute top-4 right-4 w-8 h-8 text-primary/10" />
               
