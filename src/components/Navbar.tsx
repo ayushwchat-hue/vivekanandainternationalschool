@@ -90,25 +90,9 @@ const Navbar = () => {
                 </DropdownMenuContent>
               </DropdownMenu>
             ) : (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="default" size="sm" className="gap-2">
-                    Login
-                    <ChevronDown className="w-4 h-4" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuItem asChild>
-                    <Link to="/login/director">HRMS Portal</Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem asChild>
-                    <Link to="/login/teacher">Teacher Login</Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem asChild>
-                    <Link to="/login/student">Student Login</Link>
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
+              <Button variant="default" size="sm" asChild>
+                <Link to="/login/director">HRMS Portal</Link>
+              </Button>
             )}
           </div>
 
@@ -155,17 +139,9 @@ const Navbar = () => {
                     </button>
                   </>
                 ) : (
-                  <div className="flex flex-col gap-2">
-                    <Link to="/login/director" className="px-4 py-3 text-sm font-medium text-primary hover:bg-muted rounded-lg" onClick={() => setIsOpen(false)}>
-                      HRMS Portal
-                    </Link>
-                    <Link to="/login/teacher" className="px-4 py-3 text-sm font-medium text-primary hover:bg-muted rounded-lg" onClick={() => setIsOpen(false)}>
-                      Teacher Login
-                    </Link>
-                    <Link to="/login/student" className="px-4 py-3 text-sm font-medium text-primary hover:bg-muted rounded-lg" onClick={() => setIsOpen(false)}>
-                      Student Login
-                    </Link>
-                  </div>
+                  <Link to="/login/director" className="px-4 py-3 text-sm font-medium text-primary hover:bg-muted rounded-lg" onClick={() => setIsOpen(false)}>
+                    HRMS Portal
+                  </Link>
                 )}
               </div>
             </div>
