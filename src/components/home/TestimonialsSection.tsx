@@ -1,11 +1,23 @@
 import { Star, Quote } from 'lucide-react';
 import { useScrollAnimation } from '@/hooks/useScrollAnimation';
+import { useSiteContent, getExtraData } from '@/hooks/useSiteContent';
 
-const testimonials = [
+interface Testimonial {
+  name: string;
+  role: string;
+  content: string;
+  rating: number;
+}
+
+interface TestimonialsExtraData {
+  testimonials: Testimonial[];
+}
+
+const defaultTestimonials: Testimonial[] = [
   {
     name: 'Rajesh Kumar',
     role: 'Parent of Class 8 Student',
-    content: 'The school has transformed my child\'s approach to learning. The teachers are dedicated and the facilities are excellent. Highly recommended!',
+    content: "The school has transformed my child's approach to learning. The teachers are dedicated and the facilities are excellent. Highly recommended!",
     rating: 5,
   },
   {
@@ -26,6 +38,10 @@ const TestimonialsSection = () => {
   const { ref: headerRef, isVisible: headerVisible } = useScrollAnimation({ threshold: 0.2 });
   const { ref: cardsRef, isVisible: cardsVisible } = useScrollAnimation({ threshold: 0.1 });
 
+  const { content } = useSiteContent('testimonials');
+  const extraData = getExtraData<TestimonialsExtraData>(content, { testimonials: defaultTestimonials });
+  const testimonials = extraData.testimonials || defaultTestimonials;
+
   return (
     <section className="py-16 md:py-24 bg-primary">
       <div className="container mx-auto px-4">
@@ -37,13 +53,13 @@ const TestimonialsSection = () => {
           }`}
         >
           <div className="inline-flex items-center gap-2 bg-primary-foreground/20 rounded-full px-4 py-2 mb-4">
-            <span className="text-sm font-medium text-primary-foreground">Testimonials</span>
+            <span className="text-sm font-medium text-primary-foreground">{content?.subtitle || 'Testimonials'}</span>
           </div>
           <h2 className="font-display text-3xl md:text-4xl lg:text-5xl font-bold text-primary-foreground mb-4">
-            What Parents Say
+            {content?.title || 'What Parents Say'}
           </h2>
           <p className="text-primary-foreground/80 text-lg">
-            Hear from our community about their experience with Vivekananda International School.
+            {content?.description || 'Hear from our community about their experience with Vivekananda International School.'}
           </p>
         </div>
         

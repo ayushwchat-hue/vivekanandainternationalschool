@@ -1,9 +1,22 @@
 import { Target, Eye, Heart, Lightbulb } from 'lucide-react';
 import classroomImage from '@/assets/classroom.jpg';
 import { useScrollAnimation } from '@/hooks/useScrollAnimation';
+import { useSiteContent, getExtraData } from '@/hooks/useSiteContent';
+
+interface AboutExtraData {
+  mission: string;
+  vision: string;
+}
+
+const defaultExtraData: AboutExtraData = {
+  mission: 'To provide quality education through innovative teaching, fostering creativity and critical thinking.',
+  vision: 'To be a premier educational institution that inspires students to become global citizens.',
+};
 
 const AboutSection = () => {
   const { ref: sectionRef, isVisible } = useScrollAnimation({ threshold: 0.15 });
+  const { content } = useSiteContent('about');
+  const extraData = getExtraData<AboutExtraData>(content, defaultExtraData);
 
   return (
     <section id="about" className="py-16 md:py-24 section-gradient">
@@ -15,7 +28,7 @@ const AboutSection = () => {
           }`}>
             <div className="relative rounded-2xl overflow-hidden card-shadow">
               <img 
-                src={classroomImage} 
+                src={content?.image_url || classroomImage} 
                 alt="Students learning in classroom" 
                 className="w-full h-80 md:h-96 object-cover"
               />
@@ -53,17 +66,15 @@ const AboutSection = () => {
             isVisible ? 'opacity-100 translate-x-0' : 'opacity-0 translate-x-12'
           }`}>
             <div className="inline-flex items-center gap-2 bg-primary/10 rounded-full px-4 py-2">
-              <span className="text-sm font-medium text-primary">About Our School</span>
+              <span className="text-sm font-medium text-primary">{content?.subtitle || 'About Our School'}</span>
             </div>
             
             <h2 className="font-display text-3xl md:text-4xl lg:text-5xl font-bold text-foreground">
-              Excellence in Education Since Establishment
+              {content?.title || 'Excellence in Education Since Establishment'}
             </h2>
             
             <p className="text-muted-foreground text-lg leading-relaxed">
-              Vivekananda International School is dedicated to providing holistic education 
-              that nurtures intellectual, physical, and emotional growth. Our CBSE curriculum 
-              combined with innovative teaching methods prepares students for future success.
+              {content?.description || 'Vivekananda International School is dedicated to providing holistic education that nurtures intellectual, physical, and emotional growth. Our CBSE curriculum combined with innovative teaching methods prepares students for future success.'}
             </p>
             
             <div className="grid sm:grid-cols-2 gap-6 pt-4">
@@ -76,7 +87,7 @@ const AboutSection = () => {
                 <div>
                   <h4 className="font-display font-semibold text-foreground mb-1">Our Mission</h4>
                   <p className="text-sm text-muted-foreground">
-                    To provide quality education through innovative teaching, fostering creativity and critical thinking.
+                    {extraData.mission}
                   </p>
                 </div>
               </div>
@@ -90,7 +101,7 @@ const AboutSection = () => {
                 <div>
                   <h4 className="font-display font-semibold text-foreground mb-1">Our Vision</h4>
                   <p className="text-sm text-muted-foreground">
-                    To be a premier educational institution that inspires students to become global citizens.
+                    {extraData.vision}
                   </p>
                 </div>
               </div>
