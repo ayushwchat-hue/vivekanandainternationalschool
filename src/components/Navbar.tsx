@@ -99,7 +99,7 @@ const Navbar = () => {
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
                   <DropdownMenuItem asChild>
-                    <Link to="/login/director">Director Login</Link>
+                    <Link to="/login/director">HRMS Portal</Link>
                   </DropdownMenuItem>
                   <DropdownMenuItem asChild>
                     <Link to="/login/teacher">Teacher Login</Link>
@@ -157,7 +157,7 @@ const Navbar = () => {
                 ) : (
                   <div className="flex flex-col gap-2">
                     <Link to="/login/director" className="px-4 py-3 text-sm font-medium text-primary hover:bg-muted rounded-lg" onClick={() => setIsOpen(false)}>
-                      Director Login
+                      HRMS Portal
                     </Link>
                     <Link to="/login/teacher" className="px-4 py-3 text-sm font-medium text-primary hover:bg-muted rounded-lg" onClick={() => setIsOpen(false)}>
                       Teacher Login
