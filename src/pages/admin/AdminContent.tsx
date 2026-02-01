@@ -25,7 +25,6 @@ import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import AdminLayout from '@/components/admin/AdminLayout';
-import { useAuth } from '@/contexts/AuthContext';
 import { Json } from '@/integrations/supabase/types';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
@@ -195,7 +194,6 @@ const sectionConfigs: SectionConfig[] = [
 
 const AdminContent = () => {
   const { toast } = useToast();
-  const { user } = useAuth();
   const [content, setContent] = useState<Record<string, SiteContent>>({});
   const [originalContent, setOriginalContent] = useState<Record<string, SiteContent>>({});
   const [loading, setLoading] = useState(true);
@@ -253,7 +251,6 @@ const AdminContent = () => {
         description: item.description,
         image_url: item.image_url,
         extra_data: item.extra_data,
-        updated_by: user?.id,
       })
       .eq('section_key', sectionKey);
 

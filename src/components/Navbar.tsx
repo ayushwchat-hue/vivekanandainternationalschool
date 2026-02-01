@@ -1,19 +1,24 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Menu, X, GraduationCap, ChevronDown } from 'lucide-react';
+import { Menu, X, GraduationCap, Settings } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import { useAuth } from '@/contexts/AuthContext';
 
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
+  const [isScrolled, setIsScrolled] = useState(false);
   const location = useLocation();
-  const { user, role, signOut } = useAuth();
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setIsScrolled(window.scrollY > 20);
+    };
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  useEffect(() => {
+    setIsOpen(false);
+  }, [location]);
 
   const navLinks = [
     { name: 'Home', href: '/' },
@@ -33,12 +38,18 @@ const Navbar = () => {
   };
 
   return (
-    <nav className="fixed top-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-md border-b border-border">
+    <nav
+      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
+        isScrolled
+          ? 'bg-background/95 backdrop-blur-md shadow-lg border-b border-border'
+          : 'bg-background/95 backdrop-blur-md border-b border-border'
+      }`}
+    >
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between h-16 md:h-20">
           {/* Logo */}
-          <Link to="/" className="flex items-center gap-3">
-            <div className="w-10 h-10 md:w-12 md:h-12 rounded-full bg-primary flex items-center justify-center">
+          <Link to="/" className="flex items-center gap-3 group">
+            <div className="w-10 h-10 md:w-12 md:h-12 rounded-full bg-primary flex items-center justify-center group-hover:scale-105 transition-transform">
               <GraduationCap className="w-5 h-5 md:w-6 md:h-6 text-primary-foreground" />
             </div>
             <div className="hidden sm:block">
@@ -63,43 +74,21 @@ const Navbar = () => {
             ))}
           </div>
 
-          {/* Auth Buttons */}
+          {/* Desktop Actions */}
           <div className="hidden lg:flex items-center gap-3">
-            {user ? (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="outline" size="sm" className="gap-2">
-                    {role === 'director' ? 'Director' : role === 'teacher' ? 'Teacher' : 'Student'}
-                    <ChevronDown className="w-4 h-4" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  {(role === 'director' || role === 'teacher') && (
-                    <DropdownMenuItem asChild>
-                      <Link to="/admin">Dashboard</Link>
-                    </DropdownMenuItem>
-                  )}
-                  {role === 'student' && (
-                    <DropdownMenuItem asChild>
-                      <Link to="/student">My Portal</Link>
-                    </DropdownMenuItem>
-                  )}
-                  <DropdownMenuItem onClick={signOut}>
-                    Sign Out
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            ) : (
-              <Button variant="default" size="sm" asChild>
-                <Link to="/login/director">HRMS Portal</Link>
-              </Button>
-            )}
+            <Button asChild size="sm">
+              <Link to="/admin">
+                <Settings className="w-4 h-4 mr-2" />
+                HRMS Portal
+              </Link>
+            </Button>
           </div>
 
           {/* Mobile Menu Button */}
           <button
-            className="lg:hidden p-2 rounded-lg hover:bg-muted transition-colors"
             onClick={() => setIsOpen(!isOpen)}
+            className="lg:hidden p-2 text-foreground hover:bg-muted rounded-lg transition-colors"
+            aria-label="Toggle menu"
           >
             {isOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
           </button>
@@ -119,30 +108,13 @@ const Navbar = () => {
                   {link.name}
                 </Link>
               ))}
-              <div className="border-t border-border mt-2 pt-4">
-                {user ? (
-                  <>
-                    {(role === 'director' || role === 'teacher') && (
-                      <Link
-                        to="/admin"
-                        className="block px-4 py-3 text-sm font-medium text-primary hover:bg-muted rounded-lg"
-                        onClick={() => setIsOpen(false)}
-                      >
-                        Dashboard
-                      </Link>
-                    )}
-                    <button
-                      onClick={() => { signOut(); setIsOpen(false); }}
-                      className="w-full text-left px-4 py-3 text-sm font-medium text-destructive hover:bg-muted rounded-lg"
-                    >
-                      Sign Out
-                    </button>
-                  </>
-                ) : (
-                  <Link to="/login/director" className="px-4 py-3 text-sm font-medium text-primary hover:bg-muted rounded-lg" onClick={() => setIsOpen(false)}>
+              <div className="border-t border-border mt-2 pt-4 px-4">
+                <Button asChild className="w-full">
+                  <Link to="/admin" onClick={() => setIsOpen(false)}>
+                    <Settings className="w-4 h-4 mr-2" />
                     HRMS Portal
                   </Link>
-                )}
+                </Button>
               </div>
             </div>
           </div>

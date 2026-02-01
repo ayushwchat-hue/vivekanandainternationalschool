@@ -23,7 +23,6 @@ import {
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import AdminLayout from '@/components/admin/AdminLayout';
-import { useAuth } from '@/contexts/AuthContext';
 
 interface GalleryItem {
   id: string;
@@ -38,7 +37,6 @@ const categories = ['Events', 'Classroom', 'Sports', 'Activities', 'Campus', 'Ot
 
 const AdminGallery = () => {
   const { toast } = useToast();
-  const { user } = useAuth();
   const [gallery, setGallery] = useState<GalleryItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -85,7 +83,6 @@ const AdminGallery = () => {
       category: formData.category || null,
       is_active: formData.is_active,
       display_order: formData.display_order,
-      created_by: user?.id,
     };
 
     let error;
