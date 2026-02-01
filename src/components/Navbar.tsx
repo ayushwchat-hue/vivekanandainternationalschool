@@ -74,14 +74,8 @@ const Navbar = () => {
             ))}
           </div>
 
-          {/* Desktop Actions */}
+          {/* Desktop Actions - placeholder for future items */}
           <div className="hidden lg:flex items-center gap-3">
-            <Button asChild size="sm">
-              <Link to="/admin">
-                <Settings className="w-4 h-4 mr-2" />
-                HRMS Portal
-              </Link>
-            </Button>
           </div>
 
           {/* Mobile Menu Button */}
@@ -108,14 +102,6 @@ const Navbar = () => {
                   {link.name}
                 </Link>
               ))}
-              <div className="border-t border-border mt-2 pt-4 px-4">
-                <Button asChild className="w-full">
-                  <Link to="/admin" onClick={() => setIsOpen(false)}>
-                    <Settings className="w-4 h-4 mr-2" />
-                    HRMS Portal
-                  </Link>
-                </Button>
-              </div>
             </div>
           </div>
         )}
