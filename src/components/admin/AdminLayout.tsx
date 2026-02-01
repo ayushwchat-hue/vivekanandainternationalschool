@@ -71,7 +71,7 @@ const AdminSidebar = () => {
           {!isCollapsed && (
             <div className="overflow-hidden">
               <h1 className="font-display font-bold text-sidebar-foreground truncate">
-                Admin Panel
+                HRMS Portal
               </h1>
               <p className="text-xs text-sidebar-foreground/60 capitalize">{role}</p>
             </div>
@@ -170,13 +170,15 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
       <div className="min-h-screen flex w-full bg-muted/30">
         <AdminSidebar />
         <div className="flex-1 flex flex-col">
-          <header className="h-16 border-b border-border bg-background flex items-center px-4 gap-4">
-            <SidebarTrigger>
-              <Menu className="w-5 h-5" />
-            </SidebarTrigger>
-            <h2 className="font-display font-semibold text-foreground">
-              Vivekananda International School
-            </h2>
+          <header className="h-16 border-b border-border bg-background flex items-center justify-between px-4">
+            <div className="flex items-center gap-4">
+              <SidebarTrigger>
+                <Menu className="w-5 h-5" />
+              </SidebarTrigger>
+              <h2 className="font-display font-semibold text-foreground">
+                Vivekananda International School - HRMS
+              </h2>
+            </div>
           </header>
           <main className="flex-1 p-4 md:p-6 overflow-auto">
             {children}

@@ -9,19 +9,22 @@ import { useAuth } from '@/contexts/AuthContext';
 
 type UserRole = 'director' | 'teacher' | 'student';
 
-const roleConfig: Record<UserRole, { title: string; color: string; bgColor: string }> = {
+const roleConfig: Record<UserRole, { title: string; subtitle: string; color: string; bgColor: string }> = {
   director: {
-    title: 'Director Login',
+    title: 'HRMS Portal',
+    subtitle: 'Director Access',
     color: 'text-primary',
     bgColor: 'bg-primary',
   },
   teacher: {
-    title: 'Teacher Login',
+    title: 'Teacher Portal',
+    subtitle: 'Teacher Access',
     color: 'text-accent',
     bgColor: 'bg-accent',
   },
   student: {
-    title: 'Student Login',
+    title: 'Student Portal',
+    subtitle: 'Student Access',
     color: 'text-secondary',
     bgColor: 'bg-secondary',
   },
@@ -93,7 +96,8 @@ const Login = () => {
             <h1 className="font-display text-2xl font-bold text-foreground">
               {config.title}
             </h1>
-            <p className="text-muted-foreground mt-1">
+            <p className="text-sm text-muted-foreground mt-1">{config.subtitle}</p>
+            <p className="text-muted-foreground mt-2">
               Vivekananda International School
             </p>
           </div>
