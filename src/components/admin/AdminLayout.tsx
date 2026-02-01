@@ -1,19 +1,14 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import {
   LayoutDashboard,
-  Users,
   FileText,
-  Calendar,
   Image,
-  Megaphone,
   Settings,
-  LogOut,
-  GraduationCap,
   Menu,
   ChevronDown,
+  GraduationCap,
 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
 import {
   Sidebar,
   SidebarContent,
@@ -32,7 +27,6 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from '@/components/ui/collapsible';
-import { useAuth } from '@/contexts/AuthContext';
 import { cn } from '@/lib/utils';
 
 interface AdminLayoutProps {
@@ -42,19 +36,15 @@ interface AdminLayoutProps {
 const mainNavItems = [
   { title: 'Dashboard', icon: LayoutDashboard, href: '/admin' },
   { title: 'Inquiries', icon: FileText, href: '/admin/inquiries' },
-  { title: 'Users', icon: Users, href: '/admin/users' },
 ];
 
 const contentNavItems = [
   { title: 'Site Content', icon: Settings, href: '/admin/content' },
-  { title: 'Announcements', icon: Megaphone, href: '/admin/announcements' },
-  { title: 'Events', icon: Calendar, href: '/admin/events' },
   { title: 'Gallery', icon: Image, href: '/admin/gallery' },
 ];
 
 const AdminSidebar = () => {
   const location = useLocation();
-  const { signOut, role } = useAuth();
   const { state } = useSidebar();
   const isCollapsed = state === 'collapsed';
   const [contentOpen, setContentOpen] = useState(true);
@@ -73,7 +63,7 @@ const AdminSidebar = () => {
               <h1 className="font-display font-bold text-sidebar-foreground truncate">
                 HRMS Portal
               </h1>
-              <p className="text-xs text-sidebar-foreground/60 capitalize">{role}</p>
+              <p className="text-xs text-sidebar-foreground/60">Admin</p>
             </div>
           )}
         </Link>
@@ -102,38 +92,36 @@ const AdminSidebar = () => {
           </SidebarGroupContent>
         </SidebarGroup>
 
-        {role === 'director' && (
-          <SidebarGroup>
-            <Collapsible open={contentOpen} onOpenChange={setContentOpen}>
-              <CollapsibleTrigger className="w-full">
-                <SidebarGroupLabel className="flex items-center justify-between cursor-pointer hover:bg-sidebar-accent rounded px-2 py-1">
-                  Content Management
-                  <ChevronDown className={cn("w-4 h-4 transition-transform", contentOpen && "rotate-180")} />
-                </SidebarGroupLabel>
-              </CollapsibleTrigger>
-              <CollapsibleContent>
-                <SidebarGroupContent>
-                  <SidebarMenu>
-                    {contentNavItems.map((item) => (
-                      <SidebarMenuItem key={item.title}>
-                        <SidebarMenuButton
-                          asChild
-                          isActive={isActive(item.href)}
-                          tooltip={item.title}
-                        >
-                          <Link to={item.href}>
-                            <item.icon className="w-5 h-5" />
-                            <span>{item.title}</span>
-                          </Link>
-                        </SidebarMenuButton>
-                      </SidebarMenuItem>
-                    ))}
-                  </SidebarMenu>
-                </SidebarGroupContent>
-              </CollapsibleContent>
-            </Collapsible>
-          </SidebarGroup>
-        )}
+        <SidebarGroup>
+          <Collapsible open={contentOpen} onOpenChange={setContentOpen}>
+            <CollapsibleTrigger className="w-full">
+              <SidebarGroupLabel className="flex items-center justify-between cursor-pointer hover:bg-sidebar-accent rounded px-2 py-1">
+                Content Management
+                <ChevronDown className={cn("w-4 h-4 transition-transform", contentOpen && "rotate-180")} />
+              </SidebarGroupLabel>
+            </CollapsibleTrigger>
+            <CollapsibleContent>
+              <SidebarGroupContent>
+                <SidebarMenu>
+                  {contentNavItems.map((item) => (
+                    <SidebarMenuItem key={item.title}>
+                      <SidebarMenuButton
+                        asChild
+                        isActive={isActive(item.href)}
+                        tooltip={item.title}
+                      >
+                        <Link to={item.href}>
+                          <item.icon className="w-5 h-5" />
+                          <span>{item.title}</span>
+                        </Link>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                  ))}
+                </SidebarMenu>
+              </SidebarGroupContent>
+            </CollapsibleContent>
+          </Collapsible>
+        </SidebarGroup>
 
         <SidebarGroup className="mt-auto">
           <SidebarGroupContent>
@@ -144,16 +132,6 @@ const AdminSidebar = () => {
                     <GraduationCap className="w-5 h-5" />
                     <span>Back to Website</span>
                   </Link>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-              <SidebarMenuItem>
-                <SidebarMenuButton
-                  onClick={signOut}
-                  tooltip="Sign Out"
-                  className="text-destructive hover:text-destructive"
-                >
-                  <LogOut className="w-5 h-5" />
-                  <span>Sign Out</span>
                 </SidebarMenuButton>
               </SidebarMenuItem>
             </SidebarMenu>

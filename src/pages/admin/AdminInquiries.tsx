@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Eye, Check, X, Mail, Phone, MapPin, Search } from 'lucide-react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -21,7 +21,6 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import AdminLayout from '@/components/admin/AdminLayout';
 import { format } from 'date-fns';
-import { useAuth } from '@/contexts/AuthContext';
 
 interface Inquiry {
   id: string;
@@ -39,7 +38,6 @@ interface Inquiry {
 
 const AdminInquiries = () => {
   const { toast } = useToast();
-  const { user, role } = useAuth();
   const [inquiries, setInquiries] = useState<Inquiry[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedInquiry, setSelectedInquiry] = useState<Inquiry | null>(null);
@@ -69,20 +67,10 @@ const AdminInquiries = () => {
   };
 
   const updateStatus = async (id: string, status: string) => {
-    if (role !== 'director') {
-      toast({
-        title: 'Access Denied',
-        description: 'Only directors can update inquiry status',
-        variant: 'destructive',
-      });
-      return;
-    }
-
     const { error } = await supabase
       .from('admission_inquiries')
       .update({
         status,
-        reviewed_by: user?.id,
         reviewed_at: new Date().toISOString(),
       })
       .eq('id', id);
@@ -271,7 +259,7 @@ const AdminInquiries = () => {
                     {selectedInquiry.status}
                   </span>
 
-                  {role === 'director' && selectedInquiry.status === 'pending' && (
+                  {selectedInquiry.status === 'pending' && (
                     <div className="flex gap-2">
                       <Button
                         variant="outline"
