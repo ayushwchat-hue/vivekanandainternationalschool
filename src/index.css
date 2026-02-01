@@ -120,6 +120,25 @@
   }
 }
 
+/* Prevent horizontal scroll caused by off-screen transforms/animations */
+html,
+body {
+  width: 100%;
+  overflow-x: hidden;
+}
+
+@supports (overflow: clip) {
+  html,
+  body {
+    overflow-x: clip;
+  }
+}
+
+#root {
+  width: 100%;
+  min-height: 100vh;
+}
+
 @layer utilities {
   .font-display {
     font-family: 'Playfair Display', serif;

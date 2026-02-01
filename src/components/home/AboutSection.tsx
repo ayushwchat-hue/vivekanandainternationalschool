@@ -33,7 +33,7 @@ const AboutSection = () => {
             </div>
             
             {/* Floating Card */}
-            <div className={`absolute -bottom-6 -right-6 bg-card p-4 rounded-xl card-shadow border border-border hidden md:block transition-all duration-700 delay-300 ${
+            <div className={`absolute -bottom-6 right-4 bg-card p-4 rounded-xl card-shadow border border-border hidden md:block transition-all duration-700 delay-300 ${
               isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
             }`}>
               <div className="flex items-center gap-3">
