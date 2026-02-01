@@ -143,16 +143,6 @@ const Login = () => {
               {isLoading ? 'Signing in...' : 'Sign In'}
             </Button>
           </form>
-          
-          {/* Register Link */}
-          <div className="text-center mt-6">
-            <p className="text-muted-foreground text-sm">
-              Don't have an account?{' '}
-              <Link to={`/register/${currentRole}`} className="text-primary hover:underline font-medium">
-                Register here
-              </Link>
-            </p>
-          </div>
         </div>
       </div>
     </div>
