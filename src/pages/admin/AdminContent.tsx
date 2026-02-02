@@ -15,7 +15,8 @@ import {
   ChevronRight,
   Eye,
   Undo2,
-  Sparkles
+  Sparkles,
+  MessageCircle
 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -189,6 +190,17 @@ const sectionConfigs: SectionConfig[] = [
     extraFields: [
       { key: 'quickLinks', label: 'Quick Links (comma separated)', type: 'text' },
       { key: 'programs', label: 'Program Names (comma separated)', type: 'text' },
+    ],
+  },
+  {
+    key: 'whatsapp',
+    label: 'WhatsApp Button',
+    description: 'Configure the floating WhatsApp contact button',
+    icon: MessageCircle,
+    color: 'bg-green-500/10 text-green-600 border-green-200',
+    extraFields: [
+      { key: 'phoneNumber', label: 'WhatsApp Phone Number (with country code, no +)', type: 'text' },
+      { key: 'message', label: 'Pre-filled Message', type: 'textarea' },
     ],
   },
 ];
