@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react';
-import { Plus, Edit, Trash2, Loader2, Image as ImageIcon } from 'lucide-react';
+import { useEffect, useState, useRef } from 'react';
+import { Plus, Edit, Trash2, Loader2, Image as ImageIcon, Upload, X } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -42,6 +42,10 @@ const AdminGallery = () => {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [uploading, setUploading] = useState(false);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [formData, setFormData] = useState({
     title: '',
     image_url: '',
@@ -73,13 +77,104 @@ const AdminGallery = () => {
     setLoading(false);
   };
 
+  const uploadImage = async (file: File): Promise<string | null> => {
+    const fileExt = file.name.split('.').pop();
+    const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
+    const filePath = `${fileName}`;
+
+    const { error: uploadError } = await supabase.storage
+      .from('gallery-images')
+      .upload(filePath, file);
+
+    if (uploadError) {
+      console.error('Upload error:', uploadError);
+      return null;
+    }
+
+    const { data } = supabase.storage
+      .from('gallery-images')
+      .getPublicUrl(filePath);
+
+    return data.publicUrl;
+  };
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      toast({
+        title: 'Invalid file type',
+        description: 'Please select an image file',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      toast({
+        title: 'File too large',
+        description: 'Please select an image under 5MB',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setSelectedFile(file);
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      setImagePreview(e.target?.result as string);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const clearImageSelection = () => {
+    setSelectedFile(null);
+    setImagePreview(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSaving(true);
 
+    let imageUrl = formData.image_url;
+
+    // Upload new image if selected
+    if (selectedFile) {
+      setUploading(true);
+      const uploadedUrl = await uploadImage(selectedFile);
+      setUploading(false);
+
+      if (!uploadedUrl) {
+        toast({
+          title: 'Upload failed',
+          description: 'Failed to upload image. Please try again.',
+          variant: 'destructive',
+        });
+        setSaving(false);
+        return;
+      }
+      imageUrl = uploadedUrl;
+    }
+
+    if (!imageUrl && !editingId) {
+      toast({
+        title: 'Image required',
+        description: 'Please upload an image',
+        variant: 'destructive',
+      });
+      setSaving(false);
+      return;
+    }
+
     const galleryData = {
       title: formData.title.trim(),
-      image_url: formData.image_url.trim(),
+      image_url: imageUrl,
       category: formData.category || null,
       is_active: formData.is_active,
       display_order: formData.display_order,
@@ -122,6 +217,8 @@ const AdminGallery = () => {
       is_active: item.is_active,
       display_order: item.display_order,
     });
+    setImagePreview(item.image_url);
+    setSelectedFile(null);
     setDialogOpen(true);
   };
 
@@ -154,6 +251,11 @@ const AdminGallery = () => {
       is_active: true,
       display_order: 0,
     });
+    setImagePreview(null);
+    setSelectedFile(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
   };
 
   return (
@@ -194,13 +296,44 @@ const AdminGallery = () => {
                 </div>
 
                 <div className="space-y-2">
-                  <Label>Image URL</Label>
-                  <Input
-                    value={formData.image_url}
-                    onChange={(e) => setFormData({ ...formData, image_url: e.target.value })}
-                    placeholder="https://example.com/image.jpg"
-                    required
+                  <Label>Image</Label>
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    onChange={handleFileSelect}
+                    className="hidden"
                   />
+                  
+                  {imagePreview ? (
+                    <div className="relative">
+                      <div className="aspect-video rounded-lg overflow-hidden bg-muted border">
+                        <img
+                          src={imagePreview}
+                          alt="Preview"
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                      <Button
+                        type="button"
+                        variant="secondary"
+                        size="sm"
+                        className="absolute top-2 right-2 h-8 w-8 p-0"
+                        onClick={clearImageSelection}
+                      >
+                        <X className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  ) : (
+                    <div
+                      onClick={() => fileInputRef.current?.click()}
+                      className="aspect-video rounded-lg border-2 border-dashed border-muted-foreground/30 hover:border-primary/50 bg-muted/30 flex flex-col items-center justify-center cursor-pointer transition-colors"
+                    >
+                      <Upload className="w-8 h-8 text-muted-foreground mb-2" />
+                      <p className="text-sm text-muted-foreground">Click to upload image</p>
+                      <p className="text-xs text-muted-foreground/70 mt-1">Max 5MB</p>
+                    </div>
+                  )}
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
@@ -239,11 +372,11 @@ const AdminGallery = () => {
                   <Label>Active</Label>
                 </div>
 
-                <Button type="submit" className="w-full" disabled={saving}>
-                  {saving ? (
+                <Button type="submit" className="w-full" disabled={saving || uploading}>
+                  {saving || uploading ? (
                     <>
                       <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                      Saving...
+                      {uploading ? 'Uploading...' : 'Saving...'}
                     </>
                   ) : (
                     editingId ? 'Update Image' : 'Add Image'
