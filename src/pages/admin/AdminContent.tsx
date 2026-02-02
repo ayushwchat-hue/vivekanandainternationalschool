@@ -30,6 +30,7 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
+import ImageUpload from '@/components/admin/ImageUpload';
 
 interface SiteContent {
   id: string;
@@ -534,18 +535,11 @@ const AdminContent = () => {
               />
             </div>
 
-            <div className="space-y-2">
-              <Label className="text-sm font-medium">Image URL</Label>
-              <Input
-                value={item.image_url || ''}
-                onChange={(e) => handleFieldChange(config.key, 'image_url', e.target.value)}
-                placeholder="https://example.com/image.jpg"
-                className="bg-background"
-              />
-              <p className="text-xs text-muted-foreground">
-                Optional: Paste a URL to an image for this section
-              </p>
-            </div>
+            <ImageUpload
+              value={item.image_url}
+              onChange={(url) => handleFieldChange(config.key, 'image_url', url)}
+              sectionKey={config.key}
+            />
           </CardContent>
         </Card>
 
