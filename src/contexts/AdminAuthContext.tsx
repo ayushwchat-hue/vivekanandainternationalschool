@@ -6,8 +6,9 @@ interface AdminAuthContextType {
   isAuthenticated: boolean;
   isLoading: boolean;
   needsInit: boolean;
+  sessionToken: string | null;
   login: (username: string, password: string) => Promise<boolean>;
-  logout: () => void;
+  logout: () => Promise<void>;
   changePassword: (currentPassword: string, newPassword: string) => Promise<boolean>;
   initPassword: (password: string) => Promise<boolean>;
   checkInitStatus: () => Promise<void>;
@@ -21,6 +22,7 @@ export const AdminAuthProvider = ({ children }: { children: ReactNode }) => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [needsInit, setNeedsInit] = useState(false);
+  const [sessionToken, setSessionToken] = useState<string | null>(null);
 
   const checkInitStatus = async () => {
     try {
@@ -35,12 +37,43 @@ export const AdminAuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
+  // Validate session token server-side
+  const validateSession = async (token: string): Promise<boolean> => {
+    try {
+      const { data, error } = await supabase.functions.invoke('admin-auth', {
+        body: { action: 'validate-session', sessionToken: token }
+      });
+
+      if (error) {
+        console.error('Session validation error:', error);
+        return false;
+      }
+
+      return data?.valid === true;
+    } catch (error) {
+      console.error('Session validation failed:', error);
+      return false;
+    }
+  };
+
   useEffect(() => {
     const checkSession = async () => {
       const token = sessionStorage.getItem(SESSION_KEY);
+      
       if (token) {
-        setIsAuthenticated(true);
+        // Validate token server-side instead of just trusting it exists
+        const isValid = await validateSession(token);
+        if (isValid) {
+          setSessionToken(token);
+          setIsAuthenticated(true);
+        } else {
+          // Invalid/expired session - clean up
+          sessionStorage.removeItem(SESSION_KEY);
+          setSessionToken(null);
+          setIsAuthenticated(false);
+        }
       }
+      
       await checkInitStatus();
       setIsLoading(false);
     };
@@ -66,6 +99,7 @@ export const AdminAuthProvider = ({ children }: { children: ReactNode }) => {
 
       if (data.success && data.sessionToken) {
         sessionStorage.setItem(SESSION_KEY, data.sessionToken);
+        setSessionToken(data.sessionToken);
         setIsAuthenticated(true);
         toast.success('Login successful');
         return true;
@@ -79,22 +113,36 @@ export const AdminAuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  const logout = () => {
+  const logout = async () => {
+    const token = sessionStorage.getItem(SESSION_KEY);
+    
+    // Invalidate session server-side
+    if (token) {
+      try {
+        await supabase.functions.invoke('admin-auth', {
+          body: { action: 'logout', sessionToken: token }
+        });
+      } catch (error) {
+        console.error('Logout error:', error);
+      }
+    }
+    
     sessionStorage.removeItem(SESSION_KEY);
+    setSessionToken(null);
     setIsAuthenticated(false);
     toast.success('Logged out successfully');
   };
 
   const changePassword = async (currentPassword: string, newPassword: string): Promise<boolean> => {
     try {
-      const sessionToken = sessionStorage.getItem(SESSION_KEY);
+      const token = sessionStorage.getItem(SESSION_KEY);
       
       const { data, error } = await supabase.functions.invoke('admin-auth', {
         body: { 
           action: 'change-password', 
           password: currentPassword, 
           newPassword,
-          sessionToken 
+          sessionToken: token 
         }
       });
 
@@ -156,6 +204,7 @@ export const AdminAuthProvider = ({ children }: { children: ReactNode }) => {
       isAuthenticated,
       isLoading,
       needsInit,
+      sessionToken,
       login,
       logout,
       changePassword,

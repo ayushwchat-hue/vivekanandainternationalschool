@@ -19,6 +19,7 @@ import {
 } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import { useAdminAuth } from '@/contexts/AdminAuthContext';
 import AdminLayout from '@/components/admin/AdminLayout';
 import { format } from 'date-fns';
 
@@ -38,6 +39,7 @@ interface Inquiry {
 
 const AdminInquiries = () => {
   const { toast } = useToast();
+  const { sessionToken } = useAdminAuth();
   const [inquiries, setInquiries] = useState<Inquiry[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedInquiry, setSelectedInquiry] = useState<Inquiry | null>(null);
@@ -45,49 +47,88 @@ const AdminInquiries = () => {
   const [statusFilter, setStatusFilter] = useState('all');
 
   useEffect(() => {
-    fetchInquiries();
-  }, []);
+    if (sessionToken) {
+      fetchInquiries();
+    }
+  }, [sessionToken]);
 
   const fetchInquiries = async () => {
-    const { data, error } = await supabase
-      .from('admission_inquiries')
-      .select('*')
-      .order('created_at', { ascending: false });
+    if (!sessionToken) {
+      toast({
+        title: 'Error',
+        description: 'Not authenticated',
+        variant: 'destructive',
+      });
+      setLoading(false);
+      return;
+    }
 
-    if (error) {
+    try {
+      const { data, error } = await supabase.functions.invoke('admin-data', {
+        body: { action: 'get-inquiries', sessionToken }
+      });
+
+      if (error) {
+        throw error;
+      }
+
+      if (data.error) {
+        throw new Error(data.error);
+      }
+
+      setInquiries(data.data || []);
+    } catch (error) {
+      console.error('Failed to load inquiries:', error);
       toast({
         title: 'Error',
         description: 'Failed to load inquiries',
         variant: 'destructive',
       });
-    } else {
-      setInquiries(data || []);
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   const updateStatus = async (id: string, status: string) => {
-    const { error } = await supabase
-      .from('admission_inquiries')
-      .update({
-        status,
-        reviewed_at: new Date().toISOString(),
-      })
-      .eq('id', id);
-
-    if (error) {
+    if (!sessionToken) {
       toast({
         title: 'Error',
-        description: 'Failed to update status',
+        description: 'Not authenticated',
         variant: 'destructive',
       });
-    } else {
+      return;
+    }
+
+    try {
+      const { data, error } = await supabase.functions.invoke('admin-data', {
+        body: { 
+          action: 'update-inquiry-status', 
+          sessionToken,
+          data: { id, status }
+        }
+      });
+
+      if (error) {
+        throw error;
+      }
+
+      if (data.error) {
+        throw new Error(data.error);
+      }
+
       toast({
         title: 'Success',
         description: `Inquiry ${status}`,
       });
       fetchInquiries();
       setSelectedInquiry(null);
+    } catch (error) {
+      console.error('Failed to update status:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to update status',
+        variant: 'destructive',
+      });
     }
   };
 
