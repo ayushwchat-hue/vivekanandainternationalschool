@@ -82,24 +82,37 @@ const AdminGallery = () => {
   };
 
   const uploadImage = async (file: File): Promise<string | null> => {
-    const fileExt = file.name.split('.').pop();
-    const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
-    const filePath = `${fileName}`;
+    try {
+      // Get a signed upload URL from the admin API
+      const { getUploadUrl } = await import('@/lib/adminApi');
+      const result = await getUploadUrl(file.name, file.type);
 
-    const { error: uploadError } = await supabase.storage
-      .from('gallery-images')
-      .upload(filePath, file);
+      if (result.error || !result.data) {
+        console.error('Failed to get upload URL:', result.error);
+        return null;
+      }
 
-    if (uploadError) {
-      console.error('Upload error:', uploadError);
+      const { signedUrl, token, publicUrl } = result.data;
+
+      // Upload directly using the signed URL
+      const uploadResponse = await fetch(signedUrl, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': file.type,
+        },
+        body: file,
+      });
+
+      if (!uploadResponse.ok) {
+        console.error('Upload failed:', uploadResponse.statusText);
+        return null;
+      }
+
+      return publicUrl;
+    } catch (error) {
+      console.error('Upload error:', error);
       return null;
     }
-
-    const { data } = supabase.storage
-      .from('gallery-images')
-      .getPublicUrl(filePath);
-
-    return data.publicUrl;
   };
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -193,20 +206,24 @@ const AdminGallery = () => {
       media_type: formData.media_type,
     };
 
-    let error;
+    let error: string | undefined;
 
     if (editingId) {
-      const result = await supabase.from('gallery').update(galleryData).eq('id', editingId);
+      const { updateGalleryItem } = await import('@/lib/adminApi');
+      const result = await updateGalleryItem(editingId, galleryData);
       error = result.error;
     } else {
-      const result = await supabase.from('gallery').insert(galleryData);
+      const { createGalleryItem } = await import('@/lib/adminApi');
+      const result = await createGalleryItem(galleryData);
       error = result.error;
     }
 
     if (error) {
       toast({
         title: 'Error',
-        description: 'Failed to save gallery item',
+        description: error === 'Invalid or expired session' 
+          ? 'Session expired. Please log in again.' 
+          : 'Failed to save gallery item',
         variant: 'destructive',
       });
     } else {
@@ -240,12 +257,15 @@ const AdminGallery = () => {
   const handleDelete = async (id: string) => {
     if (!confirm('Are you sure you want to delete this image?')) return;
 
-    const { error } = await supabase.from('gallery').delete().eq('id', id);
+    const { deleteGalleryItem } = await import('@/lib/adminApi');
+    const result = await deleteGalleryItem(id);
 
-    if (error) {
+    if (result.error) {
       toast({
         title: 'Error',
-        description: 'Failed to delete gallery item',
+        description: result.error === 'Invalid or expired session' 
+          ? 'Session expired. Please log in again.' 
+          : 'Failed to delete gallery item',
         variant: 'destructive',
       });
     } else {

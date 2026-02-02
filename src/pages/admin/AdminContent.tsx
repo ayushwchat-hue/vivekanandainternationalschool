@@ -256,21 +256,22 @@ const AdminContent = () => {
 
     setSaving(sectionKey);
 
-    const { error } = await supabase
-      .from('site_content')
-      .update({
-        title: item.title,
-        subtitle: item.subtitle,
-        description: item.description,
-        image_url: item.image_url,
-        extra_data: item.extra_data,
-      })
-      .eq('section_key', sectionKey);
+    // Use the secure admin API endpoint
+    const { updateSiteContent } = await import('@/lib/adminApi');
+    const result = await updateSiteContent(sectionKey, {
+      title: item.title,
+      subtitle: item.subtitle,
+      description: item.description,
+      image_url: item.image_url,
+      extra_data: item.extra_data,
+    });
 
-    if (error) {
+    if (result.error) {
       toast({
         title: 'Error',
-        description: 'Failed to save changes',
+        description: result.error === 'Invalid or expired session' 
+          ? 'Session expired. Please log in again.' 
+          : 'Failed to save changes',
         variant: 'destructive',
       });
     } else {
