@@ -73,12 +73,6 @@ const GallerySection = () => {
   const selectedItem = selectedIndex !== null ? images[selectedIndex] : null;
   const isVideo = selectedItem?.media_type === 'video';
 
-  // Masonry pattern - varying heights
-  const getItemHeight = (index: number) => {
-    const patterns = ['aspect-[4/5]', 'aspect-square', 'aspect-[4/3]', 'aspect-[3/4]'];
-    return patterns[index % patterns.length];
-  };
-
   if (loading) {
     return (
       <section className="py-16 md:py-24 bg-muted/30">
@@ -120,26 +114,26 @@ const GallerySection = () => {
             </p>
           </div>
 
-          {/* Masonry Grid */}
+          {/* Uniform Grid */}
           <div 
             ref={gridRef} 
-            className="columns-2 md:columns-3 lg:columns-4 gap-4 space-y-4"
+            className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6"
           >
             {images.map((item, index) => (
               <div
                 key={item.id}
                 onClick={() => openLightbox(index)}
-                className={`group relative break-inside-avoid cursor-pointer overflow-hidden rounded-2xl bg-muted transition-all duration-500 ${
+                className={`group relative cursor-pointer overflow-hidden rounded-2xl bg-muted shadow-md hover:shadow-xl transition-all duration-500 ${
                   gridVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
                 }`}
                 style={{ transitionDelay: `${index * 75}ms` }}
               >
-                <div className={`relative ${getItemHeight(index)} overflow-hidden`}>
+                <div className="relative aspect-square overflow-hidden">
                   {item.media_type === 'video' ? (
                     <div className="relative w-full h-full">
                       <video
                         src={item.image_url}
-                        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                         muted
                         loop
                         playsInline
@@ -159,7 +153,7 @@ const GallerySection = () => {
                     <img
                       src={item.image_url}
                       alt={item.title}
-                      className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                       loading="lazy"
                     />
                   ) : (
@@ -170,23 +164,24 @@ const GallerySection = () => {
                 </div>
                 
                 {/* Overlay */}
-                <div className="absolute inset-0 bg-gradient-to-t from-foreground/90 via-foreground/20 to-transparent opacity-0 group-hover:opacity-100 transition-all duration-300">
-                  <div className="absolute bottom-0 left-0 right-0 p-4 transform translate-y-4 group-hover:translate-y-0 transition-transform duration-300">
-                    <h3 className="font-semibold text-background text-sm md:text-base line-clamp-2">
+                <div className="absolute inset-0 bg-gradient-to-t from-foreground/80 via-foreground/10 to-transparent opacity-0 group-hover:opacity-100 transition-all duration-300">
+                  <div className="absolute bottom-0 left-0 right-0 p-4 transform translate-y-2 group-hover:translate-y-0 transition-transform duration-300">
+                    <h3 className="font-semibold text-background text-sm line-clamp-2">
                       {item.title}
                     </h3>
                     {item.category && (
-                      <span className="inline-block mt-2 px-2 py-0.5 rounded-full bg-background/20 text-xs text-background/80">
+                      <span className="inline-block mt-1 text-xs text-background/70">
                         {item.category}
                       </span>
                     )}
                   </div>
                 </div>
 
-                {/* Video indicator */}
+                {/* Video indicator badge */}
                 {item.media_type === 'video' && (
-                  <div className="absolute top-3 right-3 px-2 py-1 rounded-full bg-background/80 backdrop-blur-sm">
+                  <div className="absolute top-3 right-3 px-2 py-1 rounded-full bg-background/80 backdrop-blur-sm flex items-center gap-1">
                     <Play className="w-3 h-3 text-foreground" />
+                    <span className="text-xs font-medium text-foreground">Video</span>
                   </div>
                 )}
               </div>
