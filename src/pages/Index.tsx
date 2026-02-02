@@ -7,6 +7,7 @@ import ProgramsSection from '@/components/home/ProgramsSection';
 import FacilitiesSection from '@/components/home/FacilitiesSection';
 import TestimonialsSection from '@/components/home/TestimonialsSection';
 import ContactSection from '@/components/home/ContactSection';
+import WhatsAppButton from '@/components/WhatsAppButton';
 
 const Index = () => {
   return (
@@ -22,6 +23,7 @@ const Index = () => {
         <ContactSection />
       </main>
       <Footer />
+      <WhatsAppButton />
     </div>
   );
 };
