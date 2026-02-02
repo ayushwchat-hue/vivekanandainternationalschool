@@ -1,10 +1,26 @@
 import { MessageCircle } from 'lucide-react';
+import { useSiteContent, getExtraData } from '@/hooks/useSiteContent';
+
+interface WhatsAppData {
+  phoneNumber: string;
+  message: string;
+}
+
+const defaultData: WhatsAppData = {
+  phoneNumber: '919876543210',
+  message: 'Hello! I would like to inquire about admissions at Vivekananda International School.',
+};
 
 const WhatsAppButton = () => {
-  const phoneNumber = '919876543210'; // Replace with actual school WhatsApp number
-  const message = encodeURIComponent('Hello! I would like to inquire about admissions at Vivekananda International School.');
+  const { content, loading } = useSiteContent('whatsapp');
+  const data = getExtraData<WhatsAppData>(content, defaultData);
+  
+  const phoneNumber = data.phoneNumber || defaultData.phoneNumber;
+  const message = encodeURIComponent(data.message || defaultData.message);
   
   const whatsappUrl = `https://wa.me/${phoneNumber}?text=${message}`;
+
+  if (loading) return null;
 
   return (
     <a
