@@ -1,7 +1,8 @@
-import { useEffect, useState } from 'react';
-import { Image as ImageIcon, Play, X } from 'lucide-react';
+import { useEffect, useState, useRef } from 'react';
+import { Image as ImageIcon, Play, X, ChevronLeft, ChevronRight } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useScrollAnimation } from '@/hooks/useScrollAnimation';
+import { Button } from '@/components/ui/button';
 
 interface GalleryItem {
   id: string;
@@ -16,8 +17,9 @@ const GallerySection = () => {
   const [images, setImages] = useState<GalleryItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedItem, setSelectedItem] = useState<GalleryItem | null>(null);
-  const { ref: headerRef, isVisible: headerVisible } = useScrollAnimation({ threshold: 0.2 });
-  const { ref: contentRef, isVisible: contentVisible } = useScrollAnimation({ threshold: 0.1 });
+  const [scrollPosition, setScrollPosition] = useState(0);
+  const sliderRef = useRef<HTMLDivElement>(null);
+  const { ref: headerRef } = useScrollAnimation({ threshold: 0.2 });
 
   useEffect(() => {
     const fetchGallery = async () => {
@@ -45,6 +47,32 @@ const GallerySection = () => {
     document.body.style.overflow = '';
   };
 
+  const scroll = (direction: 'left' | 'right') => {
+    if (!sliderRef.current) return;
+    const scrollAmount = sliderRef.current.clientWidth * 0.8;
+    const newPosition = direction === 'left' 
+      ? scrollPosition - scrollAmount 
+      : scrollPosition + scrollAmount;
+    
+    sliderRef.current.scrollTo({ left: newPosition, behavior: 'smooth' });
+    setScrollPosition(newPosition);
+  };
+
+  const handleScroll = () => {
+    if (sliderRef.current) {
+      setScrollPosition(sliderRef.current.scrollLeft);
+    }
+  };
+
+  const canScrollLeft = scrollPosition > 0;
+  const canScrollRight = sliderRef.current 
+    ? scrollPosition < sliderRef.current.scrollWidth - sliderRef.current.clientWidth - 10
+    : true;
+
+  // Split images into 2 rows
+  const row1 = images.filter((_, i) => i % 2 === 0);
+  const row2 = images.filter((_, i) => i % 2 === 1);
+
   if (loading) {
     return (
       <section className="py-12 md:py-24 bg-muted/30">
@@ -65,7 +93,7 @@ const GallerySection = () => {
 
   return (
     <>
-      <section id="gallery" className="py-12 md:py-20 bg-gradient-to-b from-background via-muted/20 to-background">
+      <section id="gallery" className="py-12 md:py-20 bg-gradient-to-b from-background via-muted/20 to-background overflow-hidden">
         <div className="container mx-auto px-4">
           {/* Header */}
           <div 
@@ -83,64 +111,160 @@ const GallerySection = () => {
               Glimpses of our vibrant school community and enriching activities.
             </p>
           </div>
+        </div>
 
-          {/* Responsive Grid Gallery */}
-          <div 
-            ref={contentRef}
-            className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-4 animate-fade-in"
+        {/* Horizontal Slider with 2 Rows */}
+        <div className="relative">
+          {/* Navigation Arrows */}
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => scroll('left')}
+            disabled={!canScrollLeft}
+            className={`absolute left-2 md:left-4 top-1/2 -translate-y-1/2 z-10 w-10 h-10 md:w-12 md:h-12 rounded-full bg-background/90 hover:bg-background shadow-lg border border-border/50 transition-opacity ${
+              canScrollLeft ? 'opacity-100' : 'opacity-0 pointer-events-none'
+            }`}
           >
-            {images.map((item, index) => (
-              <button
-                key={item.id}
-                onClick={() => openLightbox(item)}
-                className={`group relative aspect-square rounded-xl md:rounded-2xl overflow-hidden bg-muted shadow-md hover:shadow-xl transition-all duration-300 hover:scale-[1.02] focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 ${
-                  index === 0 ? 'sm:col-span-2 sm:row-span-2' : ''
-                }`}
-              >
-                {item.media_type === 'video' ? (
-                  <>
-                    <video
+            <ChevronLeft className="w-5 h-5 md:w-6 md:h-6" />
+          </Button>
+          
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => scroll('right')}
+            disabled={!canScrollRight}
+            className={`absolute right-2 md:right-4 top-1/2 -translate-y-1/2 z-10 w-10 h-10 md:w-12 md:h-12 rounded-full bg-background/90 hover:bg-background shadow-lg border border-border/50 transition-opacity ${
+              canScrollRight ? 'opacity-100' : 'opacity-0 pointer-events-none'
+            }`}
+          >
+            <ChevronRight className="w-5 h-5 md:w-6 md:h-6" />
+          </Button>
+
+          {/* Slider Container */}
+          <div
+            ref={sliderRef}
+            onScroll={handleScroll}
+            className="flex flex-col gap-3 md:gap-4 overflow-x-auto px-4 md:px-8 pb-4 scroll-smooth"
+            style={{ 
+              scrollbarWidth: 'none', 
+              msOverflowStyle: 'none',
+              WebkitOverflowScrolling: 'touch'
+            }}
+          >
+            {/* Row 1 */}
+            <div className="flex gap-3 md:gap-4">
+              {row1.map((item, index) => (
+                <button
+                  key={item.id}
+                  onClick={() => openLightbox(item)}
+                  className="group relative flex-shrink-0 w-40 h-32 sm:w-52 sm:h-40 md:w-64 md:h-48 lg:w-72 lg:h-52 rounded-xl md:rounded-2xl overflow-hidden bg-muted shadow-md hover:shadow-xl transition-all duration-300 hover:scale-[1.03] focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
+                  style={{ animationDelay: `${index * 100}ms` }}
+                >
+                  {item.media_type === 'video' ? (
+                    <>
+                      <video
+                        src={item.image_url}
+                        className="w-full h-full object-cover"
+                        muted
+                        playsInline
+                        preload="metadata"
+                      />
+                      <div className="absolute inset-0 flex items-center justify-center">
+                        <div className="w-10 h-10 md:w-12 md:h-12 rounded-full bg-primary/90 flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
+                          <Play className="w-4 h-4 md:w-5 md:h-5 text-primary-foreground ml-0.5" />
+                        </div>
+                      </div>
+                    </>
+                  ) : item.image_url ? (
+                    <img
                       src={item.image_url}
-                      className="w-full h-full object-cover"
-                      muted
-                      playsInline
-                      preload="metadata"
+                      alt={item.title}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                      loading="lazy"
                     />
-                    <div className="absolute inset-0 flex items-center justify-center">
-                      <div className="w-12 h-12 md:w-14 md:h-14 rounded-full bg-primary/90 flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
-                        <Play className="w-5 h-5 md:w-6 md:h-6 text-primary-foreground ml-0.5" />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center">
+                      <ImageIcon className="w-8 h-8 text-muted-foreground" />
+                    </div>
+                  )}
+
+                  {/* Hover overlay */}
+                  <div className="absolute inset-0 bg-gradient-to-t from-foreground/80 via-foreground/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                    <div className="absolute bottom-0 left-0 right-0 p-3">
+                      <p className="text-background text-xs md:text-sm font-medium line-clamp-1">
+                        {item.title}
+                      </p>
+                      {item.category && (
+                        <span className="inline-block mt-1 text-[10px] md:text-xs bg-background/20 backdrop-blur-sm px-2 py-0.5 rounded-full text-background/90">
+                          {item.category}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </button>
+              ))}
+            </div>
+
+            {/* Row 2 */}
+            {row2.length > 0 && (
+              <div className="flex gap-3 md:gap-4">
+                {row2.map((item, index) => (
+                  <button
+                    key={item.id}
+                    onClick={() => openLightbox(item)}
+                    className="group relative flex-shrink-0 w-40 h-32 sm:w-52 sm:h-40 md:w-64 md:h-48 lg:w-72 lg:h-52 rounded-xl md:rounded-2xl overflow-hidden bg-muted shadow-md hover:shadow-xl transition-all duration-300 hover:scale-[1.03] focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
+                    style={{ animationDelay: `${(index + row1.length) * 100}ms` }}
+                  >
+                    {item.media_type === 'video' ? (
+                      <>
+                        <video
+                          src={item.image_url}
+                          className="w-full h-full object-cover"
+                          muted
+                          playsInline
+                          preload="metadata"
+                        />
+                        <div className="absolute inset-0 flex items-center justify-center">
+                          <div className="w-10 h-10 md:w-12 md:h-12 rounded-full bg-primary/90 flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
+                            <Play className="w-4 h-4 md:w-5 md:h-5 text-primary-foreground ml-0.5" />
+                          </div>
+                        </div>
+                      </>
+                    ) : item.image_url ? (
+                      <img
+                        src={item.image_url}
+                        alt={item.title}
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                        loading="lazy"
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center">
+                        <ImageIcon className="w-8 h-8 text-muted-foreground" />
+                      </div>
+                    )}
+
+                    {/* Hover overlay */}
+                    <div className="absolute inset-0 bg-gradient-to-t from-foreground/80 via-foreground/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                      <div className="absolute bottom-0 left-0 right-0 p-3">
+                        <p className="text-background text-xs md:text-sm font-medium line-clamp-1">
+                          {item.title}
+                        </p>
+                        {item.category && (
+                          <span className="inline-block mt-1 text-[10px] md:text-xs bg-background/20 backdrop-blur-sm px-2 py-0.5 rounded-full text-background/90">
+                            {item.category}
+                          </span>
+                        )}
                       </div>
                     </div>
-                  </>
-                ) : item.image_url ? (
-                  <img
-                    src={item.image_url}
-                    alt={item.title}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                    loading="lazy"
-                  />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center">
-                    <ImageIcon className="w-8 h-8 text-muted-foreground" />
-                  </div>
-                )}
-
-                {/* Hover overlay with title */}
-                <div className="absolute inset-0 bg-gradient-to-t from-foreground/80 via-foreground/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                  <div className="absolute bottom-0 left-0 right-0 p-3 md:p-4">
-                    <p className="text-background text-sm md:text-base font-medium line-clamp-2">
-                      {item.title}
-                    </p>
-                    {item.category && (
-                      <span className="inline-block mt-1 text-xs bg-background/20 backdrop-blur-sm px-2 py-0.5 rounded-full text-background/90">
-                        {item.category}
-                      </span>
-                    )}
-                  </div>
-                </div>
-              </button>
-            ))}
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
+
+          {/* Gradient Edges */}
+          <div className="absolute left-0 top-0 bottom-4 w-8 md:w-16 bg-gradient-to-r from-background to-transparent pointer-events-none" />
+          <div className="absolute right-0 top-0 bottom-4 w-8 md:w-16 bg-gradient-to-l from-background to-transparent pointer-events-none" />
         </div>
       </section>
 
