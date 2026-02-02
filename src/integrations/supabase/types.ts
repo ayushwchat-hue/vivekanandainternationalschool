@@ -95,6 +95,7 @@ export type Database = {
           id: string
           image_url: string
           is_active: boolean | null
+          media_type: string
           title: string
         }
         Insert: {
@@ -105,6 +106,7 @@ export type Database = {
           id?: string
           image_url: string
           is_active?: boolean | null
+          media_type?: string
           title: string
         }
         Update: {
@@ -115,6 +117,7 @@ export type Database = {
           id?: string
           image_url?: string
           is_active?: boolean | null
+          media_type?: string
           title?: string
         }
         Relationships: []

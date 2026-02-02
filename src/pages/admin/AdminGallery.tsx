@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef } from 'react';
-import { Plus, Edit, Trash2, Loader2, Image as ImageIcon, Upload, X } from 'lucide-react';
+import { Plus, Edit, Trash2, Loader2, Image as ImageIcon, Upload, X, Video, Play } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -23,6 +23,7 @@ import {
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import AdminLayout from '@/components/admin/AdminLayout';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 interface GalleryItem {
   id: string;
@@ -31,6 +32,7 @@ interface GalleryItem {
   category: string | null;
   is_active: boolean;
   display_order: number;
+  media_type: string;
 }
 
 const categories = ['Events', 'Classroom', 'Sports', 'Activities', 'Campus', 'Other'];
@@ -43,8 +45,9 @@ const AdminGallery = () => {
   const [saving, setSaving] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
-  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [mediaPreview, setMediaPreview] = useState<string | null>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [mediaType, setMediaType] = useState<'image' | 'video'>('image');
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [formData, setFormData] = useState({
     title: '',
@@ -52,6 +55,7 @@ const AdminGallery = () => {
     category: '',
     is_active: true,
     display_order: 0,
+    media_type: 'image',
   });
 
   useEffect(() => {
@@ -102,37 +106,45 @@ const AdminGallery = () => {
     const file = e.target.files?.[0];
     if (!file) return;
 
+    const isVideo = file.type.startsWith('video/');
+    const isImage = file.type.startsWith('image/');
+
     // Validate file type
-    if (!file.type.startsWith('image/')) {
+    if (!isImage && !isVideo) {
       toast({
         title: 'Invalid file type',
-        description: 'Please select an image file',
+        description: 'Please select an image or video file',
         variant: 'destructive',
       });
       return;
     }
 
-    // Validate file size (max 5MB)
-    if (file.size > 5 * 1024 * 1024) {
+    // Validate file size (max 50MB for videos, 5MB for images)
+    const maxSize = isVideo ? 50 * 1024 * 1024 : 5 * 1024 * 1024;
+    if (file.size > maxSize) {
       toast({
         title: 'File too large',
-        description: 'Please select an image under 5MB',
+        description: `Please select a file under ${isVideo ? '50MB' : '5MB'}`,
         variant: 'destructive',
       });
       return;
     }
 
     setSelectedFile(file);
+    setMediaType(isVideo ? 'video' : 'image');
+    setFormData(prev => ({ ...prev, media_type: isVideo ? 'video' : 'image' }));
+    
     const reader = new FileReader();
     reader.onload = (e) => {
-      setImagePreview(e.target?.result as string);
+      setMediaPreview(e.target?.result as string);
     };
     reader.readAsDataURL(file);
   };
 
-  const clearImageSelection = () => {
+  const clearMediaSelection = () => {
     setSelectedFile(null);
-    setImagePreview(null);
+    setMediaPreview(null);
+    setMediaType('image');
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
@@ -164,8 +176,8 @@ const AdminGallery = () => {
 
     if (!imageUrl && !editingId) {
       toast({
-        title: 'Image required',
-        description: 'Please upload an image',
+        title: 'Media required',
+        description: 'Please upload an image or video',
         variant: 'destructive',
       });
       setSaving(false);
@@ -178,6 +190,7 @@ const AdminGallery = () => {
       category: formData.category || null,
       is_active: formData.is_active,
       display_order: formData.display_order,
+      media_type: formData.media_type,
     };
 
     let error;
@@ -216,8 +229,10 @@ const AdminGallery = () => {
       category: item.category || '',
       is_active: item.is_active,
       display_order: item.display_order,
+      media_type: item.media_type || 'image',
     });
-    setImagePreview(item.image_url);
+    setMediaPreview(item.image_url);
+    setMediaType((item.media_type as 'image' | 'video') || 'image');
     setSelectedFile(null);
     setDialogOpen(true);
   };
@@ -250,8 +265,10 @@ const AdminGallery = () => {
       category: '',
       is_active: true,
       display_order: 0,
+      media_type: 'image',
     });
-    setImagePreview(null);
+    setMediaPreview(null);
+    setMediaType('image');
     setSelectedFile(null);
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
@@ -264,23 +281,23 @@ const AdminGallery = () => {
         <div className="flex items-center justify-between">
           <div>
             <h1 className="font-display text-2xl md:text-3xl font-bold text-foreground">Gallery</h1>
-            <p className="text-muted-foreground">Manage photo gallery</p>
+            <p className="text-muted-foreground">Manage photos and videos</p>
           </div>
 
           <Dialog open={dialogOpen} onOpenChange={(open) => { setDialogOpen(open); if (!open) resetForm(); }}>
             <DialogTrigger asChild>
               <Button className="gap-2">
                 <Plus className="w-4 h-4" />
-                Add Image
+                Add Media
               </Button>
             </DialogTrigger>
             <DialogContent>
               <DialogHeader>
                 <DialogTitle className="font-display">
-                  {editingId ? 'Edit Image' : 'Add New Image'}
+                  {editingId ? 'Edit Media' : 'Add New Media'}
                 </DialogTitle>
                 <DialogDescription>
-                  {editingId ? 'Update the image details' : 'Add a new image to the gallery'}
+                  {editingId ? 'Update the media details' : 'Add a new image or video to the gallery'}
                 </DialogDescription>
               </DialogHeader>
 
@@ -296,33 +313,47 @@ const AdminGallery = () => {
                 </div>
 
                 <div className="space-y-2">
-                  <Label>Image</Label>
+                  <Label>Image / Video</Label>
                   <input
                     ref={fileInputRef}
                     type="file"
-                    accept="image/*"
+                    accept="image/*,video/*"
                     onChange={handleFileSelect}
                     className="hidden"
                   />
                   
-                  {imagePreview ? (
+                  {mediaPreview ? (
                     <div className="relative">
                       <div className="aspect-video rounded-lg overflow-hidden bg-muted border">
-                        <img
-                          src={imagePreview}
-                          alt="Preview"
-                          className="w-full h-full object-cover"
-                        />
+                        {mediaType === 'video' ? (
+                          <video
+                            src={mediaPreview}
+                            className="w-full h-full object-cover"
+                            controls
+                          />
+                        ) : (
+                          <img
+                            src={mediaPreview}
+                            alt="Preview"
+                            className="w-full h-full object-cover"
+                          />
+                        )}
                       </div>
                       <Button
                         type="button"
                         variant="secondary"
                         size="sm"
                         className="absolute top-2 right-2 h-8 w-8 p-0"
-                        onClick={clearImageSelection}
+                        onClick={clearMediaSelection}
                       >
                         <X className="w-4 h-4" />
                       </Button>
+                      {mediaType === 'video' && (
+                        <div className="absolute top-2 left-2 bg-foreground/80 text-background text-xs px-2 py-1 rounded-full flex items-center gap-1">
+                          <Video className="w-3 h-3" />
+                          Video
+                        </div>
+                      )}
                     </div>
                   ) : (
                     <div
@@ -330,8 +361,8 @@ const AdminGallery = () => {
                       className="aspect-video rounded-lg border-2 border-dashed border-muted-foreground/30 hover:border-primary/50 bg-muted/30 flex flex-col items-center justify-center cursor-pointer transition-colors"
                     >
                       <Upload className="w-8 h-8 text-muted-foreground mb-2" />
-                      <p className="text-sm text-muted-foreground">Click to upload image</p>
-                      <p className="text-xs text-muted-foreground/70 mt-1">Max 5MB</p>
+                      <p className="text-sm text-muted-foreground">Click to upload image or video</p>
+                      <p className="text-xs text-muted-foreground/70 mt-1">Images: 5MB max | Videos: 50MB max</p>
                     </div>
                   )}
                 </div>
@@ -392,7 +423,7 @@ const AdminGallery = () => {
         ) : gallery.length === 0 ? (
           <Card>
             <CardContent className="py-8 text-center text-muted-foreground">
-              No images yet. Add your first image!
+              No media yet. Add your first image or video!
             </CardContent>
           </Card>
         ) : (
@@ -400,7 +431,24 @@ const AdminGallery = () => {
             {gallery.map((item) => (
               <Card key={item.id} className={`overflow-hidden ${!item.is_active ? 'opacity-60' : ''}`}>
                 <div className="aspect-video relative bg-muted">
-                  {item.image_url ? (
+                  {item.media_type === 'video' ? (
+                    <>
+                      <video
+                        src={item.image_url}
+                        className="w-full h-full object-cover"
+                        muted
+                      />
+                      <div className="absolute inset-0 flex items-center justify-center bg-foreground/20">
+                        <div className="w-12 h-12 rounded-full bg-background/90 flex items-center justify-center">
+                          <Play className="w-6 h-6 text-foreground ml-1" />
+                        </div>
+                      </div>
+                      <div className="absolute top-2 left-2 bg-foreground/80 text-background text-xs px-2 py-1 rounded-full flex items-center gap-1">
+                        <Video className="w-3 h-3" />
+                        Video
+                      </div>
+                    </>
+                  ) : item.image_url ? (
                     <img
                       src={item.image_url}
                       alt={item.title}
@@ -436,9 +484,11 @@ const AdminGallery = () => {
                 </div>
                 <CardContent className="p-3">
                   <h3 className="font-medium text-foreground text-sm truncate">{item.title}</h3>
-                  {item.category && (
-                    <span className="text-xs text-muted-foreground">{item.category}</span>
-                  )}
+                  <div className="flex items-center gap-2">
+                    {item.category && (
+                      <span className="text-xs text-muted-foreground">{item.category}</span>
+                    )}
+                  </div>
                 </CardContent>
               </Card>
             ))}
