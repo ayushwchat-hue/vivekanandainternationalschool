@@ -1,91 +1,150 @@
-
-# Add Scroll-Triggered Animations to Homepage
+# Security Remediation Plan
 
 ## Overview
-Add smooth, performant scroll-triggered animations to all homepage sections using the Intersection Observer API. Elements will animate into view as users scroll down the page, creating an engaging and modern user experience.
-
-## What You'll Get
-- Elements fade/slide into view when they become visible on screen
-- Staggered animations for grid items (cards appear one after another)
-- Smooth, professional transitions that don't overwhelm
-- Performance-optimized animations that only trigger once
-
-## Implementation Approach
-
-### 1. Create a Reusable Animation Hook
-Build a custom React hook that uses the Intersection Observer API to detect when elements enter the viewport:
-- Tracks visibility of elements
-- Returns animation classes when element is in view
-- Supports staggered delays for multiple items
-- Only animates once (doesn't replay when scrolling back up)
-
-### 2. Update Each Homepage Section
-
-**About Section**
-- Left image slides in from the left
-- Right content slides in from the right
-- Mission/Vision cards fade in with stagger effect
-
-**Programs Section**
-- Header fades up
-- Program cards animate in sequence (one after another)
-- CTA button fades in last
-
-**Facilities Section**
-- Header fades up
-- Main facility cards scale in with stagger
-- Additional facility items slide up in sequence
-
-**Gallery Section**
-- Header fades up
-- Gallery images scale in with stagger effect
-
-**Testimonials Section**
-- Header fades up
-- Testimonial cards slide up with stagger
-
-**Contact Section**
-- Left contact info slides in from left
-- Right form slides in from right
-- Contact detail items animate in sequence
+This plan addresses all critical and high-severity security vulnerabilities identified in the security review. The fixes are prioritized by severity and dependency order.
 
 ---
 
-## Technical Details
+## Phase 1: Database Security (Critical - Immediate)
 
-### Custom Hook: `useScrollAnimation`
-```text
-Location: src/hooks/useScrollAnimation.ts
+### 1.1 Lock Down admin_credentials Table
+**Issue**: Password hashes are publicly accessible - anyone can read them.
 
-Features:
-- Uses IntersectionObserver API (native browser, no dependencies)
-- Configurable threshold (default: 10% visible)
-- Returns ref + isVisible boolean
-- Only triggers once per element
+**Fix**:
+- Enable RLS on `admin_credentials`
+- Create restrictive policy: No public read/write access
+- Only allow access via edge functions with service role
+
+```sql
+-- Deny all public access
+ALTER TABLE public.admin_credentials ENABLE ROW LEVEL SECURITY;
+-- No policies = no access for anon/authenticated users
+-- Edge functions use service_role which bypasses RLS
 ```
 
-### CSS Animation Classes (already exist)
-The project already has these animations defined in `index.css`:
-- `animate-fade-in` - opacity 0 to 1
-- `animate-slide-up` - slide from bottom + fade
-- `animate-slide-in-left` - slide from left + fade
-- `animate-slide-in-right` - slide from right + fade
-- `animate-scale-in` - scale from 95% + fade
-- Animation delay utilities (100ms to 500ms)
+### 1.2 Secure admission_inquiries Table
+**Issue**: Sensitive PII (student names, phone, email, addresses) is publicly readable/modifiable.
 
-### Animation Pattern for Each Element
-```text
-Initial state: opacity-0 + transform offset
-Triggered state: Apply animation class when in view
-Transition: 0.6s ease-out
+**Fix**:
+- Keep INSERT open for public submissions
+- Restrict SELECT/UPDATE/DELETE to admin sessions only
+- Create server-side validation for admin access
+
+```sql
+-- Allow public to submit inquiries (INSERT only)
+-- Restrict read/update/delete to validated admin sessions
 ```
 
-### Files to Modify
-1. `src/hooks/useScrollAnimation.ts` (new) - Custom intersection observer hook
-2. `src/components/home/AboutSection.tsx` - Add scroll animations
-3. `src/components/home/ProgramsSection.tsx` - Add scroll animations
-4. `src/components/home/FacilitiesSection.tsx` - Add scroll animations
-5. `src/components/home/GallerySection.tsx` - Add scroll animations
-6. `src/components/home/TestimonialsSection.tsx` - Add scroll animations
-7. `src/components/home/ContactSection.tsx` - Add scroll animations
-8. `src/index.css` - Add initial opacity-0 state classes
+### 1.3 Restrict site_content and gallery Tables
+**Issue**: `USING (true)` policies allow anyone to modify/delete website content.
+
+**Fix**:
+- Keep SELECT public (content needs to be readable)
+- Restrict INSERT/UPDATE/DELETE to admin sessions
+
+---
+
+## Phase 2: Authentication Hardening (High Priority)
+
+### 2.1 Server-Side Session Validation
+**Issue**: Current code only checks if token EXISTS in sessionStorage, not if it's VALID.
+
+**Current vulnerable code**:
+```typescript
+// AdminAuthContext.tsx - VULNERABLE
+const token = sessionStorage.getItem(SESSION_KEY);
+if (token) {
+  setIsAuthenticated(true); // No validation!
+}
+```
+
+**Fix**:
+- Store session tokens in database with expiry
+- Validate token on each protected request
+- Edge function validates session before returning data
+
+**New flow**:
+1. Login → Generate secure token → Store in `admin_sessions` table with expiry
+2. Each request → Send token → Edge function validates against database
+3. Invalid/expired token → Reject request
+
+### 2.2 Add Rate Limiting to Login
+**Issue**: No protection against brute force attacks.
+
+**Fix**:
+- Track failed login attempts by IP/username
+- Implement exponential backoff
+- Lock account after N failed attempts
+
+---
+
+## Phase 3: Edge Function Security
+
+### 3.1 Update admin-auth Edge Function
+- Add session validation endpoint
+- Implement rate limiting
+- Add session management (create/validate/invalidate)
+
+### 3.2 Create Protected Data Endpoints
+- New edge function for admin data operations
+- Validates session token before any operation
+- Returns admission inquiries only to valid admins
+
+---
+
+## Phase 4: Storage Security
+
+### 4.1 Restrict gallery-images Bucket
+**Issue**: Anyone can upload files.
+
+**Fix**:
+- Restrict uploads to validated admin sessions
+- Add file type validation
+- Limit file sizes
+
+---
+
+## Implementation Order
+
+| Step | Task | Severity | Dependencies |
+|------|------|----------|--------------|
+| 1 | Create admin_sessions table | Critical | None |
+| 2 | Update admin-auth edge function with session management | Critical | Step 1 |
+| 3 | Lock down admin_credentials RLS | Critical | None |
+| 4 | Secure admission_inquiries RLS | Critical | Step 2 |
+| 5 | Secure site_content RLS | Critical | Step 2 |
+| 6 | Secure gallery RLS | Critical | Step 2 |
+| 7 | Update AdminAuthContext to validate sessions | High | Step 2 |
+| 8 | Add rate limiting to login | High | Step 2 |
+| 9 | Create admin-data edge function | High | Step 2 |
+| 10 | Update storage bucket policies | Medium | Step 2 |
+| 11 | Update frontend to use new endpoints | High | Steps 2, 9 |
+
+---
+
+## Estimated Effort
+- **Phase 1**: ~30 minutes (database migrations)
+- **Phase 2**: ~45 minutes (edge function + context updates)
+- **Phase 3**: ~30 minutes (new edge function)
+- **Phase 4**: ~15 minutes (storage policies)
+
+**Total**: ~2 hours
+
+---
+
+## Post-Implementation Verification
+
+1. ✅ Verify admin_credentials cannot be queried via Supabase client
+2. ✅ Verify admission_inquiries only accessible to logged-in admin
+3. ✅ Verify site_content/gallery read works publicly, write requires admin
+4. ✅ Test session expiry and validation
+5. ✅ Test rate limiting blocks rapid login attempts
+6. ✅ Verify storage uploads require admin authentication
+
+---
+
+## Notes
+
+- This uses a custom session system because the project uses single-user admin auth (not Supabase Auth)
+- Edge functions with service_role bypass RLS, enabling secure admin operations
+- Session tokens stored server-side prevent client-side manipulation
