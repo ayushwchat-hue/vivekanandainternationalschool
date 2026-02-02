@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { Image as ImageIcon, Play, Pause, Volume2, VolumeX, Calendar, Tag, ChevronLeft, ChevronRight } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useScrollAnimation } from '@/hooks/useScrollAnimation';
@@ -19,6 +19,9 @@ const GallerySection = () => {
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [isVideoPlaying, setIsVideoPlaying] = useState(false);
   const [isVideoMuted, setIsVideoMuted] = useState(true);
+  const [slideDirection, setSlideDirection] = useState<'left' | 'right' | null>(null);
+  const [isAnimating, setIsAnimating] = useState(false);
+  const thumbnailsRef = useRef<HTMLDivElement>(null);
   const { ref: headerRef, isVisible: headerVisible } = useScrollAnimation({ threshold: 0.2 });
   const { ref: contentRef, isVisible: contentVisible } = useScrollAnimation({ threshold: 0.1 });
 
@@ -41,14 +44,47 @@ const GallerySection = () => {
   const selectedItem = images[selectedIndex];
   const isVideo = selectedItem?.media_type === 'video';
 
-  const goToPrevious = () => {
-    setSelectedIndex(selectedIndex === 0 ? images.length - 1 : selectedIndex - 1);
+  const handleNavigation = (direction: 'left' | 'right') => {
+    if (isAnimating) return;
+    
+    setSlideDirection(direction);
+    setIsAnimating(true);
     setIsVideoPlaying(false);
+    
+    setTimeout(() => {
+      if (direction === 'left') {
+        setSelectedIndex(selectedIndex === 0 ? images.length - 1 : selectedIndex - 1);
+      } else {
+        setSelectedIndex(selectedIndex === images.length - 1 ? 0 : selectedIndex + 1);
+      }
+      setSlideDirection(null);
+      setIsAnimating(false);
+    }, 300);
   };
 
-  const goToNext = () => {
-    setSelectedIndex(selectedIndex === images.length - 1 ? 0 : selectedIndex + 1);
+  const handleThumbnailClick = (index: number) => {
+    if (isAnimating || index === selectedIndex) return;
+    
+    const direction = index > selectedIndex ? 'right' : 'left';
+    setSlideDirection(direction);
+    setIsAnimating(true);
     setIsVideoPlaying(false);
+    
+    setTimeout(() => {
+      setSelectedIndex(index);
+      setSlideDirection(null);
+      setIsAnimating(false);
+    }, 300);
+  };
+
+  const scrollThumbnails = (direction: 'left' | 'right') => {
+    if (thumbnailsRef.current) {
+      const scrollAmount = 200;
+      thumbnailsRef.current.scrollBy({
+        left: direction === 'left' ? -scrollAmount : scrollAmount,
+        behavior: 'smooth'
+      });
+    }
   };
 
   const formatDate = (dateString: string) => {
@@ -57,6 +93,12 @@ const GallerySection = () => {
       month: 'long',
       day: 'numeric'
     });
+  };
+
+  const getSlideClass = () => {
+    if (!slideDirection) return 'translate-x-0 opacity-100';
+    if (slideDirection === 'left') return '-translate-x-full opacity-0';
+    return 'translate-x-full opacity-0';
   };
 
   if (loading) {
@@ -106,10 +148,13 @@ const GallerySection = () => {
             contentVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
           }`}
         >
-          <div className="grid lg:grid-cols-[1fr,380px] gap-6 lg:gap-8">
-            {/* Main Preview */}
-            <div className="relative">
-              <div className="relative aspect-[4/3] md:aspect-video rounded-3xl overflow-hidden bg-muted shadow-2xl">
+          {/* Main Preview Area */}
+          <div className="relative mb-6">
+            <div className="relative aspect-[16/9] md:aspect-[21/9] rounded-3xl overflow-hidden bg-muted shadow-2xl">
+              {/* Sliding Container */}
+              <div 
+                className={`absolute inset-0 transition-all duration-300 ease-out ${getSlideClass()}`}
+              >
                 {selectedItem && (
                   <>
                     {isVideo ? (
@@ -127,158 +172,179 @@ const GallerySection = () => {
                       <img
                         src={selectedItem.image_url}
                         alt={selectedItem.title}
-                        className="w-full h-full object-cover transition-opacity duration-500"
+                        className="w-full h-full object-cover"
                       />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center">
                         <ImageIcon className="w-16 h-16 text-muted-foreground" />
                       </div>
                     )}
-
-                    {/* Gradient overlay */}
-                    <div className="absolute inset-0 bg-gradient-to-t from-foreground/60 via-transparent to-transparent" />
-
-                    {/* Navigation arrows */}
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={goToPrevious}
-                      className="absolute left-4 top-1/2 -translate-y-1/2 w-12 h-12 rounded-full bg-background/30 hover:bg-background/50 backdrop-blur-sm border border-background/20"
-                    >
-                      <ChevronLeft className="w-6 h-6 text-background" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={goToNext}
-                      className="absolute right-4 top-1/2 -translate-y-1/2 w-12 h-12 rounded-full bg-background/30 hover:bg-background/50 backdrop-blur-sm border border-background/20"
-                    >
-                      <ChevronRight className="w-6 h-6 text-background" />
-                    </Button>
-
-                    {/* Video controls */}
-                    {isVideo && (
-                      <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex items-center gap-2 bg-background/80 backdrop-blur-sm rounded-full px-4 py-2">
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => setIsVideoPlaying(!isVideoPlaying)}
-                          className="w-8 h-8 rounded-full hover:bg-muted"
-                        >
-                          {isVideoPlaying ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => setIsVideoMuted(!isVideoMuted)}
-                          className="w-8 h-8 rounded-full hover:bg-muted"
-                        >
-                          {isVideoMuted ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
-                        </Button>
-                      </div>
-                    )}
-
-                    {/* Counter */}
-                    <div className="absolute top-4 right-4 bg-background/80 backdrop-blur-sm rounded-full px-3 py-1">
-                      <span className="text-sm font-medium text-foreground">
-                        {selectedIndex + 1} / {images.length}
-                      </span>
-                    </div>
                   </>
                 )}
               </div>
-            </div>
 
-            {/* Details Panel */}
-            <div className="flex flex-col gap-6">
-              {/* Selected Item Details */}
+              {/* Gradient overlays */}
+              <div className="absolute inset-0 bg-gradient-to-r from-foreground/40 via-transparent to-foreground/40 pointer-events-none" />
+              <div className="absolute inset-0 bg-gradient-to-t from-foreground/60 via-transparent to-transparent pointer-events-none" />
+
+              {/* Navigation arrows */}
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => handleNavigation('left')}
+                disabled={isAnimating}
+                className="absolute left-4 md:left-8 top-1/2 -translate-y-1/2 w-12 h-12 md:w-14 md:h-14 rounded-full bg-background/20 hover:bg-background/40 backdrop-blur-md border border-background/30 transition-all duration-300 hover:scale-110 disabled:opacity-50"
+              >
+                <ChevronLeft className="w-6 h-6 md:w-7 md:h-7 text-background" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => handleNavigation('right')}
+                disabled={isAnimating}
+                className="absolute right-4 md:right-8 top-1/2 -translate-y-1/2 w-12 h-12 md:w-14 md:h-14 rounded-full bg-background/20 hover:bg-background/40 backdrop-blur-md border border-background/30 transition-all duration-300 hover:scale-110 disabled:opacity-50"
+              >
+                <ChevronRight className="w-6 h-6 md:w-7 md:h-7 text-background" />
+              </Button>
+
+              {/* Video controls */}
+              {isVideo && (
+                <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex items-center gap-2 bg-background/80 backdrop-blur-sm rounded-full px-4 py-2 shadow-lg">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => setIsVideoPlaying(!isVideoPlaying)}
+                    className="w-8 h-8 rounded-full hover:bg-muted"
+                  >
+                    {isVideoPlaying ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => setIsVideoMuted(!isVideoMuted)}
+                    className="w-8 h-8 rounded-full hover:bg-muted"
+                  >
+                    {isVideoMuted ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
+                  </Button>
+                </div>
+              )}
+
+              {/* Info overlay */}
               {selectedItem && (
-                <div className="bg-card rounded-2xl p-6 shadow-lg border border-border/50">
-                  <div className="space-y-4">
-                    {/* Title */}
-                    <h3 className="font-display text-xl md:text-2xl font-bold text-foreground leading-tight">
+                <div className="absolute bottom-0 left-0 right-0 p-6 md:p-8">
+                  <div className="max-w-2xl">
+                    <h3 className="font-display text-xl md:text-2xl lg:text-3xl font-bold text-background mb-3 drop-shadow-lg">
                       {selectedItem.title}
                     </h3>
-
-                    {/* Meta info */}
-                    <div className="flex flex-wrap gap-3">
+                    <div className="flex flex-wrap items-center gap-3">
                       {selectedItem.category && (
-                        <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-primary/10 text-primary">
+                        <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-background/20 backdrop-blur-sm text-background">
                           <Tag className="w-3.5 h-3.5" />
                           <span className="text-sm font-medium">{selectedItem.category}</span>
                         </div>
                       )}
-                      <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-muted text-muted-foreground">
+                      <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-background/20 backdrop-blur-sm text-background">
                         <Calendar className="w-3.5 h-3.5" />
                         <span className="text-sm">{formatDate(selectedItem.created_at)}</span>
                       </div>
                       {isVideo && (
-                        <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-secondary/10 text-secondary">
+                        <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-primary/80 backdrop-blur-sm text-primary-foreground">
                           <Play className="w-3.5 h-3.5" />
                           <span className="text-sm font-medium">Video</span>
                         </div>
                       )}
                     </div>
-
-                    {/* Divider */}
-                    <div className="h-px bg-border" />
-
-                    {/* Type indicator */}
-                    <p className="text-sm text-muted-foreground">
-                      {isVideo 
-                        ? 'Click play to watch this video from our school events.' 
-                        : 'A memorable moment captured at our school.'}
-                    </p>
                   </div>
                 </div>
               )}
 
-              {/* Thumbnails Grid */}
-              <div className="bg-card rounded-2xl p-4 shadow-lg border border-border/50">
-                <p className="text-sm font-medium text-muted-foreground mb-3 px-1">Browse Gallery</p>
-                <div className="grid grid-cols-4 gap-2 max-h-[280px] overflow-y-auto pr-1">
-                  {images.map((item, index) => (
-                    <button
-                      key={item.id}
-                      onClick={() => {
-                        setSelectedIndex(index);
-                        setIsVideoPlaying(false);
-                      }}
-                      className={`relative aspect-square rounded-xl overflow-hidden transition-all duration-300 ${
-                        selectedIndex === index 
-                          ? 'ring-2 ring-primary ring-offset-2 ring-offset-card scale-95' 
-                          : 'hover:opacity-80'
-                      }`}
-                    >
-                      {item.media_type === 'video' ? (
-                        <>
-                          <video
-                            src={item.image_url}
-                            className="w-full h-full object-cover"
-                            muted
-                            playsInline
-                          />
-                          <div className="absolute inset-0 flex items-center justify-center bg-foreground/20">
-                            <Play className="w-4 h-4 text-background" />
-                          </div>
-                        </>
-                      ) : item.image_url ? (
-                        <img
-                          src={item.image_url}
-                          alt={item.title}
-                          className="w-full h-full object-cover"
-                          loading="lazy"
-                        />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center bg-muted">
-                          <ImageIcon className="w-4 h-4 text-muted-foreground" />
-                        </div>
-                      )}
-                    </button>
-                  ))}
-                </div>
+              {/* Counter */}
+              <div className="absolute top-4 right-4 md:top-6 md:right-6 bg-background/80 backdrop-blur-sm rounded-full px-4 py-2 shadow-lg">
+                <span className="text-sm font-medium text-foreground">
+                  {selectedIndex + 1} / {images.length}
+                </span>
               </div>
             </div>
+          </div>
+
+          {/* Horizontal Thumbnails Strip */}
+          <div className="relative">
+            {/* Scroll buttons */}
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => scrollThumbnails('left')}
+              className="absolute -left-2 md:left-0 top-1/2 -translate-y-1/2 z-10 w-10 h-10 rounded-full bg-background/90 hover:bg-background shadow-lg border border-border/50"
+            >
+              <ChevronLeft className="w-5 h-5" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => scrollThumbnails('right')}
+              className="absolute -right-2 md:right-0 top-1/2 -translate-y-1/2 z-10 w-10 h-10 rounded-full bg-background/90 hover:bg-background shadow-lg border border-border/50"
+            >
+              <ChevronRight className="w-5 h-5" />
+            </Button>
+
+            {/* Thumbnails container */}
+            <div 
+              ref={thumbnailsRef}
+              className="flex gap-3 md:gap-4 overflow-x-auto scrollbar-hide px-8 md:px-12 py-4 scroll-smooth"
+              style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+            >
+              {images.map((item, index) => (
+                <button
+                  key={item.id}
+                  onClick={() => handleThumbnailClick(index)}
+                  disabled={isAnimating}
+                  className={`relative flex-shrink-0 w-28 h-20 md:w-36 md:h-24 lg:w-44 lg:h-28 rounded-xl overflow-hidden transition-all duration-300 ${
+                    selectedIndex === index 
+                      ? 'ring-2 ring-primary ring-offset-2 ring-offset-background scale-105 shadow-xl' 
+                      : 'opacity-60 hover:opacity-100 hover:scale-105'
+                  }`}
+                >
+                  {item.media_type === 'video' ? (
+                    <>
+                      <video
+                        src={item.image_url}
+                        className="w-full h-full object-cover"
+                        muted
+                        playsInline
+                        preload="metadata"
+                      />
+                      <div className="absolute inset-0 flex items-center justify-center bg-foreground/30">
+                        <div className="w-8 h-8 rounded-full bg-background/80 flex items-center justify-center">
+                          <Play className="w-4 h-4 text-foreground ml-0.5" />
+                        </div>
+                      </div>
+                    </>
+                  ) : item.image_url ? (
+                    <img
+                      src={item.image_url}
+                      alt={item.title}
+                      className="w-full h-full object-cover"
+                      loading="lazy"
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center bg-muted">
+                      <ImageIcon className="w-6 h-6 text-muted-foreground" />
+                    </div>
+                  )}
+                  
+                  {/* Thumbnail overlay with title */}
+                  <div className="absolute inset-0 bg-gradient-to-t from-foreground/60 via-transparent to-transparent opacity-0 hover:opacity-100 transition-opacity duration-300">
+                    <span className="absolute bottom-2 left-2 right-2 text-xs text-background font-medium truncate">
+                      {item.title}
+                    </span>
+                  </div>
+                </button>
+              ))}
+            </div>
+
+            {/* Fade edges */}
+            <div className="absolute top-0 left-0 w-12 h-full bg-gradient-to-r from-background to-transparent pointer-events-none" />
+            <div className="absolute top-0 right-0 w-12 h-full bg-gradient-to-l from-background to-transparent pointer-events-none" />
           </div>
         </div>
       </div>
