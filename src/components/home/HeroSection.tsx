@@ -18,7 +18,6 @@ const defaultExtraData: HeroExtraData = {
   ],
   ctaButtons: [
     { text: 'Apply for Admission', link: '/admission' },
-    { text: 'Learn More', link: '/#about' },
   ],
 };
 
