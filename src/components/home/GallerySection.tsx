@@ -1,8 +1,7 @@
 import { useEffect, useState } from 'react';
-import { Image as ImageIcon, X, ChevronLeft, ChevronRight, Play, Pause, Volume2, VolumeX } from 'lucide-react';
+import { Image as ImageIcon, Play, Pause, Volume2, VolumeX, Calendar, Tag, ChevronLeft, ChevronRight } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useScrollAnimation } from '@/hooks/useScrollAnimation';
-import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 
 interface GalleryItem {
@@ -11,22 +10,23 @@ interface GalleryItem {
   image_url: string;
   category: string | null;
   media_type: string;
+  created_at: string;
 }
 
 const GallerySection = () => {
   const [images, setImages] = useState<GalleryItem[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
-  const [isVideoPlaying, setIsVideoPlaying] = useState(true);
+  const [selectedIndex, setSelectedIndex] = useState(0);
+  const [isVideoPlaying, setIsVideoPlaying] = useState(false);
   const [isVideoMuted, setIsVideoMuted] = useState(true);
   const { ref: headerRef, isVisible: headerVisible } = useScrollAnimation({ threshold: 0.2 });
-  const { ref: gridRef, isVisible: gridVisible } = useScrollAnimation({ threshold: 0.1 });
+  const { ref: contentRef, isVisible: contentVisible } = useScrollAnimation({ threshold: 0.1 });
 
   useEffect(() => {
     const fetchGallery = async () => {
       const { data } = await supabase
         .from('gallery')
-        .select('id, title, image_url, category, media_type')
+        .select('id, title, image_url, category, media_type, created_at')
         .eq('is_active', true)
         .order('display_order', { ascending: true })
         .limit(12);
@@ -38,40 +38,26 @@ const GallerySection = () => {
     fetchGallery();
   }, []);
 
-  const openLightbox = (index: number) => setSelectedIndex(index);
-  const closeLightbox = () => {
-    setSelectedIndex(null);
-    setIsVideoPlaying(true);
-  };
+  const selectedItem = images[selectedIndex];
+  const isVideo = selectedItem?.media_type === 'video';
 
   const goToPrevious = () => {
-    if (selectedIndex !== null) {
-      setSelectedIndex(selectedIndex === 0 ? images.length - 1 : selectedIndex - 1);
-      setIsVideoPlaying(true);
-    }
+    setSelectedIndex(selectedIndex === 0 ? images.length - 1 : selectedIndex - 1);
+    setIsVideoPlaying(false);
   };
 
   const goToNext = () => {
-    if (selectedIndex !== null) {
-      setSelectedIndex(selectedIndex === images.length - 1 ? 0 : selectedIndex + 1);
-      setIsVideoPlaying(true);
-    }
+    setSelectedIndex(selectedIndex === images.length - 1 ? 0 : selectedIndex + 1);
+    setIsVideoPlaying(false);
   };
 
-  // Handle keyboard navigation
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (selectedIndex === null) return;
-      if (e.key === 'ArrowLeft') goToPrevious();
-      if (e.key === 'ArrowRight') goToNext();
-      if (e.key === 'Escape') closeLightbox();
-    };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [selectedIndex]);
-
-  const selectedItem = selectedIndex !== null ? images[selectedIndex] : null;
-  const isVideo = selectedItem?.media_type === 'video';
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    });
+  };
 
   if (loading) {
     return (
@@ -92,202 +78,210 @@ const GallerySection = () => {
   }
 
   return (
-    <>
-      <section id="gallery" className="py-16 md:py-24 bg-gradient-to-b from-background via-muted/30 to-background overflow-hidden">
-        <div className="container mx-auto px-4">
-          {/* Header */}
-          <div 
-            ref={headerRef}
-            className={`text-center max-w-3xl mx-auto mb-12 md:mb-16 transition-all duration-700 ease-out ${
-              headerVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
-            }`}
-          >
-            <div className="inline-flex items-center gap-2 bg-primary/10 rounded-full px-4 py-2 mb-4">
-              <ImageIcon className="w-4 h-4 text-primary" />
-              <span className="text-sm font-medium text-primary">Photo Gallery</span>
-            </div>
-            <h2 className="font-display text-3xl md:text-4xl lg:text-5xl font-bold text-foreground mb-4">
-              Life at Our School
-            </h2>
-            <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
-              Glimpses of our vibrant school community, memorable events, and enriching activities.
-            </p>
+    <section id="gallery" className="py-16 md:py-24 bg-gradient-to-b from-background via-muted/30 to-background overflow-hidden">
+      <div className="container mx-auto px-4">
+        {/* Header */}
+        <div 
+          ref={headerRef}
+          className={`text-center max-w-3xl mx-auto mb-12 md:mb-16 transition-all duration-700 ease-out ${
+            headerVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
+          }`}
+        >
+          <div className="inline-flex items-center gap-2 bg-primary/10 rounded-full px-4 py-2 mb-4">
+            <ImageIcon className="w-4 h-4 text-primary" />
+            <span className="text-sm font-medium text-primary">Photo Gallery</span>
           </div>
+          <h2 className="font-display text-3xl md:text-4xl lg:text-5xl font-bold text-foreground mb-4">
+            Life at Our School
+          </h2>
+          <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
+            Glimpses of our vibrant school community, memorable events, and enriching activities.
+          </p>
+        </div>
 
-          {/* Uniform Grid */}
-          <div 
-            ref={gridRef} 
-            className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6"
-          >
-            {images.map((item, index) => (
-              <div
-                key={item.id}
-                onClick={() => openLightbox(index)}
-                className={`group relative cursor-pointer overflow-hidden rounded-2xl bg-muted shadow-md hover:shadow-xl transition-all duration-500 ${
-                  gridVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
-                }`}
-                style={{ transitionDelay: `${index * 75}ms` }}
-              >
-                <div className="relative aspect-square overflow-hidden">
-                  {item.media_type === 'video' ? (
-                    <div className="relative w-full h-full">
+        {/* Main Gallery Content */}
+        <div 
+          ref={contentRef}
+          className={`transition-all duration-700 ease-out ${
+            contentVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
+          }`}
+        >
+          <div className="grid lg:grid-cols-[1fr,380px] gap-6 lg:gap-8">
+            {/* Main Preview */}
+            <div className="relative">
+              <div className="relative aspect-[4/3] md:aspect-video rounded-3xl overflow-hidden bg-muted shadow-2xl">
+                {selectedItem && (
+                  <>
+                    {isVideo ? (
                       <video
-                        src={item.image_url}
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                        muted
+                        key={selectedItem.id}
+                        src={selectedItem.image_url}
+                        className="w-full h-full object-cover"
+                        autoPlay={isVideoPlaying}
+                        muted={isVideoMuted}
                         loop
                         playsInline
-                        onMouseEnter={(e) => e.currentTarget.play()}
-                        onMouseLeave={(e) => {
-                          e.currentTarget.pause();
-                          e.currentTarget.currentTime = 0;
-                        }}
                       />
-                      <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                        <div className="w-12 h-12 rounded-full bg-background/80 backdrop-blur-sm flex items-center justify-center group-hover:scale-0 transition-transform duration-300">
-                          <Play className="w-5 h-5 text-foreground ml-1" />
-                        </div>
+                    ) : selectedItem.image_url ? (
+                      <img
+                        src={selectedItem.image_url}
+                        alt={selectedItem.title}
+                        className="w-full h-full object-cover transition-opacity duration-500"
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center">
+                        <ImageIcon className="w-16 h-16 text-muted-foreground" />
                       </div>
-                    </div>
-                  ) : item.image_url ? (
-                    <img
-                      src={item.image_url}
-                      alt={item.title}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                      loading="lazy"
-                    />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center bg-muted">
-                      <ImageIcon className="w-8 h-8 text-muted-foreground" />
-                    </div>
-                  )}
-                </div>
-                
-                {/* Overlay */}
-                <div className="absolute inset-0 bg-gradient-to-t from-foreground/80 via-foreground/10 to-transparent opacity-0 group-hover:opacity-100 transition-all duration-300">
-                  <div className="absolute bottom-0 left-0 right-0 p-4 transform translate-y-2 group-hover:translate-y-0 transition-transform duration-300">
-                    <h3 className="font-semibold text-background text-sm line-clamp-2">
-                      {item.title}
-                    </h3>
-                    {item.category && (
-                      <span className="inline-block mt-1 text-xs text-background/70">
-                        {item.category}
-                      </span>
                     )}
+
+                    {/* Gradient overlay */}
+                    <div className="absolute inset-0 bg-gradient-to-t from-foreground/60 via-transparent to-transparent" />
+
+                    {/* Navigation arrows */}
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={goToPrevious}
+                      className="absolute left-4 top-1/2 -translate-y-1/2 w-12 h-12 rounded-full bg-background/30 hover:bg-background/50 backdrop-blur-sm border border-background/20"
+                    >
+                      <ChevronLeft className="w-6 h-6 text-background" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={goToNext}
+                      className="absolute right-4 top-1/2 -translate-y-1/2 w-12 h-12 rounded-full bg-background/30 hover:bg-background/50 backdrop-blur-sm border border-background/20"
+                    >
+                      <ChevronRight className="w-6 h-6 text-background" />
+                    </Button>
+
+                    {/* Video controls */}
+                    {isVideo && (
+                      <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex items-center gap-2 bg-background/80 backdrop-blur-sm rounded-full px-4 py-2">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => setIsVideoPlaying(!isVideoPlaying)}
+                          className="w-8 h-8 rounded-full hover:bg-muted"
+                        >
+                          {isVideoPlaying ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => setIsVideoMuted(!isVideoMuted)}
+                          className="w-8 h-8 rounded-full hover:bg-muted"
+                        >
+                          {isVideoMuted ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
+                        </Button>
+                      </div>
+                    )}
+
+                    {/* Counter */}
+                    <div className="absolute top-4 right-4 bg-background/80 backdrop-blur-sm rounded-full px-3 py-1">
+                      <span className="text-sm font-medium text-foreground">
+                        {selectedIndex + 1} / {images.length}
+                      </span>
+                    </div>
+                  </>
+                )}
+              </div>
+            </div>
+
+            {/* Details Panel */}
+            <div className="flex flex-col gap-6">
+              {/* Selected Item Details */}
+              {selectedItem && (
+                <div className="bg-card rounded-2xl p-6 shadow-lg border border-border/50">
+                  <div className="space-y-4">
+                    {/* Title */}
+                    <h3 className="font-display text-xl md:text-2xl font-bold text-foreground leading-tight">
+                      {selectedItem.title}
+                    </h3>
+
+                    {/* Meta info */}
+                    <div className="flex flex-wrap gap-3">
+                      {selectedItem.category && (
+                        <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-primary/10 text-primary">
+                          <Tag className="w-3.5 h-3.5" />
+                          <span className="text-sm font-medium">{selectedItem.category}</span>
+                        </div>
+                      )}
+                      <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-muted text-muted-foreground">
+                        <Calendar className="w-3.5 h-3.5" />
+                        <span className="text-sm">{formatDate(selectedItem.created_at)}</span>
+                      </div>
+                      {isVideo && (
+                        <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-secondary/10 text-secondary">
+                          <Play className="w-3.5 h-3.5" />
+                          <span className="text-sm font-medium">Video</span>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Divider */}
+                    <div className="h-px bg-border" />
+
+                    {/* Type indicator */}
+                    <p className="text-sm text-muted-foreground">
+                      {isVideo 
+                        ? 'Click play to watch this video from our school events.' 
+                        : 'A memorable moment captured at our school.'}
+                    </p>
                   </div>
                 </div>
+              )}
 
-                {/* Video indicator badge */}
-                {item.media_type === 'video' && (
-                  <div className="absolute top-3 right-3 px-2 py-1 rounded-full bg-background/80 backdrop-blur-sm flex items-center gap-1">
-                    <Play className="w-3 h-3 text-foreground" />
-                    <span className="text-xs font-medium text-foreground">Video</span>
-                  </div>
-                )}
+              {/* Thumbnails Grid */}
+              <div className="bg-card rounded-2xl p-4 shadow-lg border border-border/50">
+                <p className="text-sm font-medium text-muted-foreground mb-3 px-1">Browse Gallery</p>
+                <div className="grid grid-cols-4 gap-2 max-h-[280px] overflow-y-auto pr-1">
+                  {images.map((item, index) => (
+                    <button
+                      key={item.id}
+                      onClick={() => {
+                        setSelectedIndex(index);
+                        setIsVideoPlaying(false);
+                      }}
+                      className={`relative aspect-square rounded-xl overflow-hidden transition-all duration-300 ${
+                        selectedIndex === index 
+                          ? 'ring-2 ring-primary ring-offset-2 ring-offset-card scale-95' 
+                          : 'hover:opacity-80'
+                      }`}
+                    >
+                      {item.media_type === 'video' ? (
+                        <>
+                          <video
+                            src={item.image_url}
+                            className="w-full h-full object-cover"
+                            muted
+                            playsInline
+                          />
+                          <div className="absolute inset-0 flex items-center justify-center bg-foreground/20">
+                            <Play className="w-4 h-4 text-background" />
+                          </div>
+                        </>
+                      ) : item.image_url ? (
+                        <img
+                          src={item.image_url}
+                          alt={item.title}
+                          className="w-full h-full object-cover"
+                          loading="lazy"
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center bg-muted">
+                          <ImageIcon className="w-4 h-4 text-muted-foreground" />
+                        </div>
+                      )}
+                    </button>
+                  ))}
+                </div>
               </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Lightbox Dialog */}
-      <Dialog open={selectedIndex !== null} onOpenChange={(open) => !open && closeLightbox()}>
-        <DialogContent className="max-w-[95vw] max-h-[95vh] p-0 bg-background/95 backdrop-blur-xl border-none">
-          <div className="relative w-full h-full flex items-center justify-center p-4 md:p-8">
-            {/* Close button */}
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={closeLightbox}
-              className="absolute top-4 right-4 z-50 rounded-full bg-background/50 hover:bg-background/80 backdrop-blur-sm"
-            >
-              <X className="w-5 h-5" />
-            </Button>
-
-            {/* Navigation - Previous */}
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={goToPrevious}
-              className="absolute left-4 top-1/2 -translate-y-1/2 z-50 rounded-full bg-background/50 hover:bg-background/80 backdrop-blur-sm w-12 h-12"
-            >
-              <ChevronLeft className="w-6 h-6" />
-            </Button>
-
-            {/* Navigation - Next */}
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={goToNext}
-              className="absolute right-4 top-1/2 -translate-y-1/2 z-50 rounded-full bg-background/50 hover:bg-background/80 backdrop-blur-sm w-12 h-12"
-            >
-              <ChevronRight className="w-6 h-6" />
-            </Button>
-
-            {/* Media Content */}
-            {selectedItem && (
-              <div className="relative max-w-full max-h-[80vh] overflow-hidden rounded-xl">
-                {isVideo ? (
-                  <div className="relative">
-                    <video
-                      src={selectedItem.image_url}
-                      className="max-w-full max-h-[80vh] rounded-xl"
-                      autoPlay={isVideoPlaying}
-                      muted={isVideoMuted}
-                      loop
-                      playsInline
-                      controls={false}
-                    />
-                    {/* Video Controls */}
-                    <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-2 bg-background/80 backdrop-blur-sm rounded-full px-4 py-2">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => setIsVideoPlaying(!isVideoPlaying)}
-                        className="w-8 h-8 rounded-full"
-                      >
-                        {isVideoPlaying ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => setIsVideoMuted(!isVideoMuted)}
-                        className="w-8 h-8 rounded-full"
-                      >
-                        {isVideoMuted ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
-                      </Button>
-                    </div>
-                  </div>
-                ) : (
-                  <img
-                    src={selectedItem.image_url}
-                    alt={selectedItem.title}
-                    className="max-w-full max-h-[80vh] object-contain rounded-xl"
-                  />
-                )}
-              </div>
-            )}
-
-            {/* Caption */}
-            {selectedItem && (
-              <div className="absolute bottom-4 left-1/2 -translate-x-1/2 text-center bg-background/80 backdrop-blur-sm rounded-full px-6 py-2">
-                <h3 className="font-semibold text-foreground">{selectedItem.title}</h3>
-                {selectedItem.category && (
-                  <span className="text-sm text-muted-foreground">{selectedItem.category}</span>
-                )}
-              </div>
-            )}
-
-            {/* Image counter */}
-            <div className="absolute top-4 left-4 bg-background/80 backdrop-blur-sm rounded-full px-3 py-1">
-              <span className="text-sm text-foreground font-medium">
-                {selectedIndex !== null ? selectedIndex + 1 : 0} / {images.length}
-              </span>
             </div>
           </div>
-        </DialogContent>
-      </Dialog>
-    </>
+        </div>
+      </div>
+    </section>
   );
 };
 
