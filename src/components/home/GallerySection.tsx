@@ -158,16 +158,32 @@ const GallerySection = () => {
                 {selectedItem && (
                   <>
                     {isVideo ? (
-                      <video
-                        key={selectedItem.id}
-                        src={selectedItem.image_url}
-                        className="w-full h-full object-cover"
-                        autoPlay={isVideoPlaying}
-                        muted={isVideoMuted}
-                        loop
-                        playsInline
-                        preload="metadata"
-                      />
+                      <>
+                        <video
+                          key={selectedItem.id}
+                          src={selectedItem.image_url}
+                          className="w-full h-full object-cover"
+                          autoPlay={isVideoPlaying}
+                          muted={isVideoMuted}
+                          loop
+                          playsInline
+                          preload="auto"
+                          onLoadedData={(e) => {
+                            e.currentTarget.currentTime = 0.1;
+                          }}
+                        />
+                        {/* Video thumbnail overlay when not playing */}
+                        {!isVideoPlaying && (
+                          <div 
+                            className="absolute inset-0 flex items-center justify-center cursor-pointer bg-foreground/10"
+                            onClick={() => setIsVideoPlaying(true)}
+                          >
+                            <div className="w-20 h-20 rounded-full bg-primary/90 flex items-center justify-center shadow-2xl hover:scale-110 transition-transform">
+                              <Play className="w-8 h-8 text-primary-foreground ml-1" />
+                            </div>
+                          </div>
+                        )}
+                      </>
                     ) : selectedItem.image_url ? (
                       <img
                         src={selectedItem.image_url}
@@ -311,7 +327,10 @@ const GallerySection = () => {
                         className="w-full h-full object-cover"
                         muted
                         playsInline
-                        preload="metadata"
+                        preload="auto"
+                        onLoadedData={(e) => {
+                          e.currentTarget.currentTime = 0.1;
+                        }}
                       />
                       <div className="absolute inset-0 flex items-center justify-center bg-foreground/30">
                         <div className="w-8 h-8 rounded-full bg-background/80 flex items-center justify-center">
