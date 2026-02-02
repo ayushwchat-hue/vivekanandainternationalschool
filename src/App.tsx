@@ -4,6 +4,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AdminAuthProvider, useAdminAuth } from "@/contexts/AdminAuthContext";
+import { LanguageProvider } from "@/contexts/LanguageContext";
 
 // Pages
 import Index from "./pages/Index";
@@ -40,39 +41,41 @@ const ProtectedAdminRoute = ({ children }: { children: React.ReactNode }) => {
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
-        <AdminAuthProvider>
-          <Routes>
-            {/* Public Routes */}
-            <Route path="/" element={<Index />} />
-            <Route path="/admission" element={<Admission />} />
-            
-            {/* Admin Login */}
-            <Route path="/admin/login" element={<AdminLogin />} />
-            
-            {/* Protected Admin Routes */}
-            <Route path="/admin" element={
-              <ProtectedAdminRoute><AdminDashboard /></ProtectedAdminRoute>
-            } />
-            <Route path="/admin/inquiries" element={
-              <ProtectedAdminRoute><AdminInquiries /></ProtectedAdminRoute>
-            } />
-            <Route path="/admin/content" element={
-              <ProtectedAdminRoute><AdminContent /></ProtectedAdminRoute>
-            } />
-            <Route path="/admin/gallery" element={
-              <ProtectedAdminRoute><AdminGallery /></ProtectedAdminRoute>
-            } />
-            
-            {/* Catch-all */}
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </AdminAuthProvider>
-      </BrowserRouter>
-    </TooltipProvider>
+    <LanguageProvider>
+      <TooltipProvider>
+        <Toaster />
+        <Sonner />
+        <BrowserRouter>
+          <AdminAuthProvider>
+            <Routes>
+              {/* Public Routes */}
+              <Route path="/" element={<Index />} />
+              <Route path="/admission" element={<Admission />} />
+              
+              {/* Admin Login */}
+              <Route path="/admin/login" element={<AdminLogin />} />
+              
+              {/* Protected Admin Routes */}
+              <Route path="/admin" element={
+                <ProtectedAdminRoute><AdminDashboard /></ProtectedAdminRoute>
+              } />
+              <Route path="/admin/inquiries" element={
+                <ProtectedAdminRoute><AdminInquiries /></ProtectedAdminRoute>
+              } />
+              <Route path="/admin/content" element={
+                <ProtectedAdminRoute><AdminContent /></ProtectedAdminRoute>
+              } />
+              <Route path="/admin/gallery" element={
+                <ProtectedAdminRoute><AdminGallery /></ProtectedAdminRoute>
+              } />
+              
+              {/* Catch-all */}
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </AdminAuthProvider>
+        </BrowserRouter>
+      </TooltipProvider>
+    </LanguageProvider>
   </QueryClientProvider>
 );
 

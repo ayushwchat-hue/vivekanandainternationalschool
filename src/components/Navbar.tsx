@@ -1,12 +1,22 @@
 import { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Menu, X, GraduationCap, Settings } from 'lucide-react';
+import { Menu, X, GraduationCap, Sun, Moon, Globe } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { useTheme } from '@/hooks/useTheme';
+import { useLanguage } from '@/contexts/LanguageContext';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const location = useLocation();
+  const { theme, toggleTheme } = useTheme();
+  const { language, setLanguage, t } = useLanguage();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -21,12 +31,12 @@ const Navbar = () => {
   }, [location]);
 
   const navLinks = [
-    { name: 'Home', href: '/' },
-    { name: 'About', href: '/#about' },
-    { name: 'Programs', href: '/#programs' },
-    { name: 'Facilities', href: '/#facilities' },
-    { name: 'Admission', href: '/admission' },
-    { name: 'Contact', href: '/#contact' },
+    { name: t('nav.home'), href: '/' },
+    { name: t('nav.about'), href: '/#about' },
+    { name: t('nav.programs'), href: '/#programs' },
+    { name: t('nav.facilities'), href: '/#facilities' },
+    { name: t('nav.admission'), href: '/admission' },
+    { name: t('nav.contact'), href: '/#contact' },
   ];
 
   const handleNavClick = (href: string) => {
@@ -54,9 +64,11 @@ const Navbar = () => {
             </div>
             <div className="hidden sm:block">
               <h1 className="font-display text-lg md:text-xl font-bold text-foreground leading-tight">
-                Vivekananda International School
+                {language === 'hi' ? 'विवेकानंद इंटरनेशनल स्कूल' : 'Vivekananda International School'}
               </h1>
-              <p className="text-xs text-muted-foreground">CBSE Affiliated School</p>
+              <p className="text-xs text-muted-foreground">
+                {language === 'hi' ? 'सीबीएसई संबद्ध विद्यालय' : 'CBSE Affiliated School'}
+              </p>
             </div>
           </Link>
 
@@ -64,7 +76,7 @@ const Navbar = () => {
           <div className="hidden lg:flex items-center gap-1">
             {navLinks.map((link) => (
               <Link
-                key={link.name}
+                key={link.href}
                 to={link.href}
                 onClick={() => handleNavClick(link.href)}
                 className="px-4 py-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors rounded-lg hover:bg-muted"
@@ -74,18 +86,96 @@ const Navbar = () => {
             ))}
           </div>
 
-          {/* Desktop Actions - placeholder for future items */}
-          <div className="hidden lg:flex items-center gap-3">
+          {/* Desktop Actions - Theme & Language */}
+          <div className="hidden lg:flex items-center gap-2">
+            {/* Language Switcher */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon" className="h-9 w-9">
+                  <Globe className="h-4 w-4" />
+                  <span className="sr-only">Switch language</span>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem 
+                  onClick={() => setLanguage('en')}
+                  className={language === 'en' ? 'bg-muted' : ''}
+                >
+                  🇬🇧 English
+                </DropdownMenuItem>
+                <DropdownMenuItem 
+                  onClick={() => setLanguage('hi')}
+                  className={language === 'hi' ? 'bg-muted' : ''}
+                >
+                  🇮🇳 हिंदी
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+
+            {/* Theme Toggle */}
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              onClick={toggleTheme}
+              className="h-9 w-9"
+            >
+              {theme === 'dark' ? (
+                <Sun className="h-4 w-4" />
+              ) : (
+                <Moon className="h-4 w-4" />
+              )}
+              <span className="sr-only">Toggle theme</span>
+            </Button>
           </div>
 
-          {/* Mobile Menu Button */}
-          <button
-            onClick={() => setIsOpen(!isOpen)}
-            className="lg:hidden p-2 text-foreground hover:bg-muted rounded-lg transition-colors"
-            aria-label="Toggle menu"
-          >
-            {isOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
-          </button>
+          {/* Mobile Actions */}
+          <div className="flex lg:hidden items-center gap-1">
+            {/* Language Switcher Mobile */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon" className="h-9 w-9">
+                  <Globe className="h-5 w-5" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem 
+                  onClick={() => setLanguage('en')}
+                  className={language === 'en' ? 'bg-muted' : ''}
+                >
+                  🇬🇧 English
+                </DropdownMenuItem>
+                <DropdownMenuItem 
+                  onClick={() => setLanguage('hi')}
+                  className={language === 'hi' ? 'bg-muted' : ''}
+                >
+                  🇮🇳 हिंदी
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+
+            {/* Theme Toggle Mobile */}
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              onClick={toggleTheme}
+              className="h-9 w-9"
+            >
+              {theme === 'dark' ? (
+                <Sun className="h-5 w-5" />
+              ) : (
+                <Moon className="h-5 w-5" />
+              )}
+            </Button>
+
+            {/* Mobile Menu Button */}
+            <button
+              onClick={() => setIsOpen(!isOpen)}
+              className="p-2 text-foreground hover:bg-muted rounded-lg transition-colors"
+              aria-label="Toggle menu"
+            >
+              {isOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+            </button>
+          </div>
         </div>
 
         {/* Mobile Navigation */}
@@ -94,7 +184,7 @@ const Navbar = () => {
             <div className="flex flex-col gap-2">
               {navLinks.map((link) => (
                 <Link
-                  key={link.name}
+                  key={link.href}
                   to={link.href}
                   onClick={() => handleNavClick(link.href)}
                   className="px-4 py-3 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg transition-colors"
