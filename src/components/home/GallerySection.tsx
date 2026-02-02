@@ -70,9 +70,7 @@ const GallerySection = () => {
           {/* Header */}
           <div 
             ref={headerRef}
-            className={`text-center max-w-3xl mx-auto mb-8 md:mb-12 transition-all duration-700 ease-out ${
-              headerVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
-            }`}
+            className="text-center max-w-3xl mx-auto mb-8 md:mb-12 animate-fade-in"
           >
             <div className="inline-flex items-center gap-2 bg-primary/10 rounded-full px-4 py-1.5 mb-4">
               <ImageIcon className="w-4 h-4 text-primary" />
@@ -89,9 +87,7 @@ const GallerySection = () => {
           {/* Responsive Grid Gallery */}
           <div 
             ref={contentRef}
-            className={`grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-4 transition-all duration-700 ease-out ${
-              contentVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
-            }`}
+            className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-4 animate-fade-in"
           >
             {images.map((item, index) => (
               <button
