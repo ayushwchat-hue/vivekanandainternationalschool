@@ -121,6 +121,7 @@ const GallerySection = () => {
                         muted={isVideoMuted}
                         loop
                         playsInline
+                        preload="metadata"
                       />
                     ) : selectedItem.image_url ? (
                       <img
